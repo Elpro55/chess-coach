@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chess Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<style>
+/* VOICE: club coach, direct, no fluff
+   IDEA: a tournament scoresheet next to a wooden board
+   PICTURE: the board itself, big, with the eval bar beside it
+   COLOUR and TYPE: white paper, black ink, walnut board, red for blunders; Archivo wide
+   LAYOUT: strict left edge, thick top rule, tabs, stacks on phones */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#121211);--ink:light-dark(#141414,#ecebe6);--mute:light-dark(#666,#9a9a94);--line:light-dark(#e2e2de,#2b2b29);--card:light-dark(#f6f6f3,#1b1b1a);
+--red:#e4002b;--orange:#ef8a00;--yellow:#d9b400;--good:#2f8a55;--l:#ecd9b5;--d:#b0805a}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3.5vw,48px) max(5vw,16px);max-width:1240px;margin:0 auto}
+header.band{border-top:8px solid var(--ink)}
+h1{font-size:clamp(32px,6vw,52px);line-height:1.05;margin:0 0 6px;font-stretch:112%;font-weight:800;letter-spacing:-.01em}
+h2{font-size:24px;line-height:1.15;margin:28px 0 12px;font-stretch:108%}
+h3{font-size:17px;margin:0 0 6px}
+p{margin:0 0 10px}.mute{color:var(--mute)}.small{font-size:13px}
+form.sync{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+input,select,button{font:inherit;font-size:16px;min-height:44px;border-radius:6px}
+input,select{border:2px solid var(--ink);background:var(--bg);color:var(--ink);padding:0 12px}
+input{flex:1 1 220px;max-width:360px}
+button{border:2px solid var(--ink);background:var(--ink);color:var(--bg);padding:0 16px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-top:20px}
+nav.tabs button{background:transparent;color:var(--ink);border:0;border-radius:6px 6px 0 0;flex:none}
+nav.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
+.status{min-height:24px;margin-top:10px;font-size:15px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px}
+.card{background:var(--card);border-radius:10px;padding:16px}
+.big{font-size:clamp(28px,5vw,40px);font-weight:800;font-stretch:112%;line-height:1.05}
+.tips li{margin-bottom:10px}.tips b{display:block}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--mute);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+.W{color:var(--good);font-weight:700}.L{color:var(--red);font-weight:700}.D{color:var(--mute);font-weight:700}
+.scroll{overflow-x:auto}
+/* board */
+.review{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:20px;align-items:start}
+.boardwrap{display:flex;gap:8px}
+.board{display:grid;grid-template-columns:repeat(8,1fr);width:min(88vw,480px);aspect-ratio:1;border:3px solid var(--ink);border-radius:4px;overflow:hidden;user-select:none}
+.sq{position:relative;border:0;padding:0;border-radius:0;min-height:0;display:flex;align-items:center;justify-content:center;font-size:min(9vw,50px);line-height:1;cursor:default;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.sq.l{background:var(--l)}.sq.d{background:var(--d)}
+.sq.hl::after{content:"";position:absolute;inset:0;background:rgba(255,214,0,.42)}
+.sq.best::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--good)}
+.sq.sel::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--red)}
+.sq.click{cursor:pointer}
+.pw{color:#fff;-webkit-text-stroke:1.4px #222;text-shadow:0 1px 1px rgba(0,0,0,.35)}.pb{color:#151515;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+.coord{position:absolute;font:600 10px Archivo,sans-serif;opacity:.7;color:#3a2a1c}.coord.f{right:3px;bottom:2px}.coord.r{left:3px;top:2px}
+.evalbar{width:16px;border:2px solid var(--ink);border-radius:4px;background:#151515;position:relative;overflow:hidden}
+.evalbar i{position:absolute;left:0;right:0;bottom:0;background:#f4f4f0;transition:height .25s}
+@media(prefers-reduced-motion:reduce){.evalbar i{transition:none}}
+.navbtns{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}.navbtns button{min-width:52px}
+.moves{display:grid;grid-template-columns:2.6em 1fr 1fr;gap:2px 6px;max-height:420px;overflow-y:auto;font-variant-numeric:tabular-nums;font-size:15px}
+.mv{background:none;border:0;color:var(--ink);text-align:left;padding:4px 6px;min-height:32px;border-radius:4px;font-weight:500}
+.mv.on{background:var(--ink);color:var(--bg)}
+.mv.blunder{color:var(--red);font-weight:800}.mv.mistake{color:var(--orange);font-weight:700}.mv.inaccuracy{color:var(--yellow);font-weight:700}
+.mv.on.blunder,.mv.on.mistake,.mv.on.inaccuracy{color:var(--bg)}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 8px;border-radius:99px;color:#fff}
+.tag.blunder{background:var(--red)}.tag.mistake{background:var(--orange)}.tag.inaccuracy{background:var(--yellow);color:#111}.tag.good{background:var(--good)}
+.progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}.progress i{display:block;height:100%;background:var(--red);width:0}
+.theory{border-left:4px solid var(--ink);padding:2px 0 2px 14px;margin-bottom:18px}
+.theory code{font-size:14px}
+.empty{padding:28px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--mute)}
+[hidden]{display:none!important}
+@media(max-width:820px){.review{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--mute)}.stack td:empty{display:none}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="band">
+  <h1>Chess Coach</h1>
+  <p class="mute">Enter a chess.com username. It loads the recent games, checks them with Stockfish and tells you what to work on.</p>
+  <form class="sync" id="syncForm">
+    <label for="user" hidden>chess.com username</label>
+    <input id="user" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="chess.com username">
+    <button id="syncBtn">Sync games</button>
+    <select id="depth" aria-label="Analysis strength">
+      <option value="10">Fast analysis</option>
+      <option value="13">Deeper analysis</option>
+    </select>
+  </form>
+  <div class="status" id="status"></div>
+  <div id="qbox" hidden><div class="progress"><i id="qbar"></i></div><span class="small" id="qtxt"></span> <button class="ghost small" id="stopBtn" style="min-height:32px">Stop</button></div>
+  <nav class="tabs" role="tablist">
+    <button data-tab="overview" aria-selected="true">Coach</button>
+    <button data-tab="games">Games</button>
+    <button data-tab="review">Review</button>
+    <button data-tab="puzzles">Puzzles</button>
+    <button data-tab="openings">Openings</button>
+  </nav>
+</header>
+
+<main class="band" style="padding-top:0">
+  <section id="overview"></section>
+  <section id="games" hidden></section>
+  <section id="review" hidden></section>
+  <section id="puzzles" hidden></section>
+  <section id="openings" hidden></section>
+</main>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const DRAWS=['agreed','repetition','stalemate','insufficient','50move','timevsinsufficient'];
+const SF_URL='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
+const GLYPH={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+const FILES='abcdefgh';
+
+/* ---------- opening theory ---------- */
+const THEORY=[
+ {k:'italian',name:'Italian Game',line:'1.e4 e5 2.Nf3 Nc6 3.Bc4',w:'Aim at f7. Play c3 and d3 (slow) or c3 + d4 (sharp) and castle early. Re1, h3 and Nbd2-f1-g3 is the classic regroup.',b:'Answer with 3...Bc5 or 3...Nf6. After 3...Nf6 4.Ng5 d5 5.exd5 never recapture 5...Nxd5?! carelessly: 5...Na5 is the main line.'},
+ {k:'two knights',name:'Two Knights Defense',line:'1.e4 e5 2.Nf3 Nc6 3.Bc4 Nf6',w:'4.d3 keeps it calm. 4.Ng5 attacks f7, but you have to know the lines after 4...d5.',b:'After 4.Ng5 d5 5.exd5 play 5...Na5 and accept a pawn down for quick development.'},
+ {k:'ruy lopez',name:'Ruy Lopez',line:'1.e4 e5 2.Nf3 Nc6 3.Bb5',w:'You pressure the knight that guards e5, but e5 is not hanging yet. Plan: O-O, Re1, c3, d4 and h3.',b:'3...a6 4.Ba4 Nf6 5.O-O Be7 is the safe main road. The Berlin (3...Nf6) is solid if you like endgames.'},
+ {k:'scotch',name:'Scotch Game',line:'1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4',w:'You open the centre at once. Develop quickly (Nc3, Be2/Bc4, O-O) and use the space.',b:'4...Bc5 or 4...Nf6 hit the d4 knight and e4 right away. Do not drift.'},
+ {k:'four knights',name:'Four Knights Game',line:'1.e4 e5 2.Nf3 Nc6 3.Nc3 Nf6',w:'Calm and solid. 4.d4 (Scotch Four Knights) or 4.Bb5 gives you an easy plan.',b:'Mirror the development, castle, and look for ...d5 at the right moment.'},
+ {k:'vienna',name:'Vienna Game',line:'1.e4 e5 2.Nc3',w:'Prepares f4. Bc4 + f4 gives quick attacking chances against f7.',b:'2...Nf6 and, when it works, ...d5 is the most direct answer.'},
+ {k:'bishops opening',name:"Bishop's Opening",line:'1.e4 e5 2.Bc4',w:'Flexible: you can transpose to Italian or Vienna lines. d3, Nf3, c3 and O-O.',b:'2...Nf6 3.d3 c6 followed by ...d5 is a clean way to equalise.'},
+ {k:'kings gambit',name:"King's Gambit",line:'1.e4 e5 2.f4',w:'You give a pawn for the open f-file and quick development. Castle fast and get the knights out.',b:'Taking with 2...exf4 is fine. Then strike back with ...d5 instead of clinging to the pawn.'},
+ {k:'petrov',name:"Petrov's Defense",line:'1.e4 e5 2.Nf3 Nf6',w:'3.Nxe5 d6 4.Nf3 Nxe4 5.d4 gives you a small, safe edge.',b:'After 3.Nxe5 play 3...d6 FIRST. Taking 3...Nxe4? runs into 4.Qe2, and the knight is pinned.'},
+ {k:'philidor',name:'Philidor Defense',line:'1.e4 e5 2.Nf3 d6',w:'3.d4 and develop freely. Black is solid but cramped, so open lines.',b:'Expect less space. Play ...Nf6, ...Be7, ...O-O and keep e5 firm.'},
+ {k:'sicilian',name:'Sicilian Defense',line:'1.e4 c5',w:'The Open Sicilian (2.Nf3 + 3.d4) is the sharpest. The Alapin 2.c3 builds a d4 centre with less theory.',b:'You fight for d4 asymmetrically: the half-open c-file is your plan, so get rooks there. Watch the White kingside attack.'},
+ {k:'french',name:'French Defense',line:'1.e4 e6 2.d4 d5',w:'3.e5 grabs space. Support d4 with c3 and Nf3, and attack the kingside.',b:'Your light-squared bishop is the problem piece. Break the chain with ...c5 and later ...f6.'},
+ {k:'caro kann',name:'Caro-Kann Defense',line:'1.e4 c6 2.d4 d5',w:'The Advance (3.e5) is popular. Take space and stop the bishop from getting comfortable.',b:'Develop the light bishop to f5 or g4 BEFORE you play ...e6. After 3.e5 Bf5, follow with ...e6 and ...c5.'},
+ {k:'scandinavian',name:'Scandinavian Defense',line:'1.e4 d5 2.exd5 Qxd5 3.Nc3',w:'Hit the queen with tempo (Nc3, later Bd2/Nb5 ideas). Grab the centre with d4.',b:'Put the queen on a5 or d6, then play ...c6, ...Bf5/Bg4, ...e6 and ...Nf6 fast.'},
+ {k:'pirc',name:'Pirc Defense',line:'1.e4 d6 2.d4 Nf6 3.Nc3 g6',w:'Big centre. Be3, Qd2, f3 and an h4-h5 attack is a simple setup.',b:'Fianchetto, castle, then hit the centre with ...e5 or ...c5.'},
+ {k:'modern',name:'Modern Defense',line:'1.e4 g6',w:'Take the full centre with d4 and Nc3, and do not overextend.',b:'Same idea as the Pirc: let White build, then strike with ...c5/...e5.'},
+ {k:'alekhine',name:"Alekhine's Defense",line:'1.e4 Nf6 2.e5 Nd5',w:'Gain space but keep the pawns protected. 3.d4 d6 4.Nf3 is calm and good.',b:'Chip away at the pawn chain with ...d6. The space is a target.'},
+ {k:'queens gambit declined',name:"Queen's Gambit Declined",line:'1.d4 d5 2.c4 e6',w:'Nc3, Bg5, e3 and Nf3. Minority attack (b4-b5) is the classic plan.',b:'Rock solid. Free your game with ...c5 or ...e5 and look after the c8 bishop.'},
+ {k:'queens gambit accepted',name:"Queen's Gambit Accepted",line:'1.d4 d5 2.c4 dxc4',w:'You win the pawn back easily with e3 and Bxc4. Don\'t panic about it.',b:'Do not try to keep the pawn with ...b5. Develop and hit the centre with ...c5.'},
+ {k:'slav',name:'Slav Defense',line:'1.d4 d5 2.c4 c6',w:'3.Nf3 Nf6 4.Nc3. Watch out for ...dxc4 and try to regain it with a4 and e3.',b:'Bring the light bishop out to f5 before ...e6. That is the whole point of the Slav.'},
+ {k:'queens gambit',name:"Queen's Gambit",line:'1.d4 d5 2.c4',w:'Not a real gambit: after ...dxc4 the pawn comes back with e3 and Bxc4.',b:'Choose a system: ...e6 (Declined), ...c6 (Slav) or ...dxc4 (Accepted).'},
+ {k:'london',name:'London System',line:'1.d4, Bf4, e3, Nf3, c3, Bd3, Nbd2',w:'Same setup every game. Plan Ne5, then a kingside push. Watch ...c5 + ...Qb6 hitting b2.',b:'Hit it early: ...c5 and ...Qb6 target b2, and ...Bd6 trades off the Bf4.'},
+ {k:'kings indian',name:"King's Indian Defense",line:'1.d4 Nf6 2.c4 g6 3.Nc3 Bg7',w:'Big centre with e4. Mostly the queenside is where you play (c5, b4).',b:'Let White build, then ...e5 and, after the centre closes, ...f5 for a kingside attack.'},
+ {k:'nimzo',name:'Nimzo-Indian Defense',line:'1.d4 Nf6 2.c4 e6 3.Nc3 Bb4',w:'Qc2 or e3 are the main tries. Keep the bishop pair and avoid doubled pawns cheaply.',b:'Pin the knight and fight for e4. Giving the bishop for the knight is often part of the plan.'},
+ {k:'dutch',name:'Dutch Defense',line:'1.d4 f5',w:'Fianchetto with g3/Bg2 or punish loosely with an early e4 break.',b:'You fight for e4. Stonewall (...e6, ...d5, ...c6) is the simplest structure.'},
+ {k:'english',name:'English Opening',line:'1.c4',w:'A reversed Sicilian. Fianchetto (g3, Bg2) and control d5.',b:'1...e5 or 1...Nf6 are easy answers. Take your share of the centre.'},
+ {k:'reti',name:'Réti Opening',line:'1.Nf3 d5 2.c4',w:'Flexible: pressure d5 from the side and fianchetto.',b:'Keep it simple with ...d5, ...Nf6, ...e6 or ...c6.'},
+ {k:'queens pawn',name:"Queen's Pawn Opening",line:'1.d4',w:'Without c4 you get a slower game. Pick a system (London, Colle) and learn its plans.',b:'Solid central play: ...d5, ...Nf6, ...e6 or ...Bf5 is enough to equalise.'},
+ {k:'kings pawn',name:"King's Pawn Opening",line:'1.e4 e5',w:'Principles: knights before bishops, castle early, don\'t move the same piece twice.',b:'Fight for the centre and don\'t take the queen out early.'},
+];
+const norm=s=>String(s).toLowerCase().replace(/['’]/g,'').replace(/[-_]/g,' ');
+function theoryFor(name){const n=norm(name);return THEORY.find(t=>n.includes(t.k))||null}
+function openingName(pgn){
+  const m=pgn.match(/\[ECOUrl "([^"]+)"\]/);
+  if(!m) return 'Unknown opening';
+  let seg=decodeURIComponent(m[1].split('/').pop()).split('-');
+  const out=[];for(const w of seg){if(/\d/.test(w)||w.includes('...'))break;out.push(w)}
+  const full=out.join(' ')||'Unknown opening';
+  const t=theoryFor(full);
+  return t?t.name:out.slice(0,3).join(' ');
+}
+
+/* ---------- state ---------- */
+const S={user:'',games:[],an:{},tab:'overview',rev:{url:null,i:0},pz:{list:[],i:0,sel:null,msg:'',done:store.get('cc_solved',{})}};
+let queue=[],busy=false,stopFlag=false;
+
+function status(t,err){$('#status').innerHTML=err?`<span class="L">${esc(t)}</span>`:esc(t)}
+
+/* ---------- chess.com sync ---------- */
+async function getJSON(u){const r=await fetch(u);if(r.status===404)throw new Error('notfound');if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+function parseGame(g,user){
+  const color=g.white.username.toLowerCase()===user?'white':'black';
+  const me=g[color],opp=g[color==='white'?'black':'white'];
+  const res=me.result==='win'?'W':DRAWS.includes(me.result)?'D':'L';
+  return {url:g.url,pgn:g.pgn,end:g.end_time,tc:g.time_class,rated:g.rated,color,res,how:res==='L'?me.result:(res==='W'?opp.result:me.result),
+    rating:me.rating,opp:opp.username,oppR:opp.rating,acc:g.accuracies?Math.round(g.accuracies[color]):null,opening:openingName(g.pgn||'')};
+}
+async function sync(auto){
+  const user=$('#user').value.trim().toLowerCase();
+  if(!user){status('Type a chess.com username first.',1);return}
+  if(user!==S.user){S.user=user;S.an=store.get('cc_an_'+user,{});S.games=store.get('cc_g_'+user,[]);renderAll()}
+  store.set('cc_user',user);
+  $('#syncBtn').disabled=true;status(auto?'Checking for new games…':'Loading games from chess.com…');
+  try{
+    const {archives}=await getJSON(`https://api.chess.com/pub/player/${encodeURIComponent(user)}/games/archives`);
+    if(!archives||!archives.length){status('No games on this account yet.');return}
+    const months=archives.slice(-3);
+    const lists=await Promise.all(months.map(u=>getJSON(u).then(d=>d.games||[]).catch(()=>[])));
+    const games=lists.flat().filter(g=>g.rules==='chess'&&g.pgn).map(g=>parseGame(g,user)).sort((a,b)=>b.end-a.end).slice(0,150);
+    const before=new Set(S.games.map(g=>g.url));
+    const fresh=games.filter(g=>!before.has(g.url)).length;
+    S.games=games;store.set('cc_g_'+user,games);store.set('cc_last',Date.now());
+    status(`${games.length} games loaded from the last ${months.length} months`+(fresh&&before.size?` (${fresh} new)`:'')+'.');
+    renderAll();
+    games.slice(0,3).forEach(g=>{if(!S.an[g.url])enqueue(g.url)});
+  }catch(e){
+    status(e.message==='notfound'?`No chess.com player called "${user}".`:'Could not reach chess.com. Check your connection and try again.',1);
+  }finally{$('#syncBtn').disabled=false}
+}
+
+/* ---------- engine ---------- */
+let engP=null,eng=null,engChain=Promise.resolve();
+function engine(){
+  if(engP)return engP;
+  engP=fetch(SF_URL).then(r=>r.text()).then(src=>new Promise(res=>{
+    eng=new Worker(URL.createObjectURL(new Blob([src],{type:'application/javascript'})));
+    eng.onmessage=e=>{if(String(e.data??e).includes('uciok'))res()};
+    eng.postMessage('uci');
+  }));
+  engP.catch(()=>{engP=null});
+  return engP;
+}
+function rawEval(fen,depth){
+  return new Promise(res=>{
+    let cp=0,mate=null;
+    eng.onmessage=e=>{
+      const l=String(e.data??e);
+      if(l.startsWith('info')&&l.includes(' score ')){const m=l.match(/score (cp|mate) (-?\d+)/);if(m){if(m[1]==='cp'){cp=+m[2];mate=null}else mate=+m[2]}}
+      else if(l.startsWith('bestmove')){const b=l.split(' ')[1];res({cp:mate===null?cp:(mate>0?10000-mate:-10000-mate),best:b&&b!=='(none)'?b:null})}
+    };
+    eng.postMessage('position fen '+fen);eng.postMessage('go depth '+depth);
+  });
+}
+function evalFen(fen,depth){const p=engChain.then(()=>rawEval(fen,depth));engChain=p.catch(()=>{});return p}
+const winp=cp=>50+50*(2/(1+Math.exp(-0.00368208*Math.max(-1500,Math.min(1500,cp))))-1);
+function material(fen){let t=0;for(const c of fen.split(' ')[0])t+={q:9,r:5,b:3,n:3}[c.toLowerCase()]||0;return t}
+
+function movesFromPgn(pgn){
+  const body=pgn.replace(/\[[^\]]*\]/g,' ').replace(/\{[^}]*\}/g,' ');
+  let txt=body,prev;do{prev=txt;txt=txt.replace(/\([^()]*\)/g,' ')}while(txt!==prev);
+  return txt.replace(/\$\d+/g,' ').replace(/\d+\.(\.\.)?/g,' ').split(/\s+/).filter(t=>t&&!/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
+}
+async function analyze(url,onProg){
+  const g=S.games.find(x=>x.url===url);if(!g)return;
+  await engine();
+  const fenH=(g.pgn.match(/\[FEN "([^"]+)"\]/)||[])[1];
+  const c=fenH?new Chess(fenH):new Chess();
+  const fens=[c.fen()],moves=[];
+  for(const san of movesFromPgn(g.pgn)){const m=c.move(san);if(!m)break;moves.push({san:m.san,u:m.from+m.to+(m.promotion||''),c:m.color});fens.push(c.fen())}
+  const depth=+$('#depth').value,evals=[],best=[],t=new Chess();
+  for(let i=0;i<fens.length;i++){
+    if(stopFlag)return null;
+    t.load(fens[i]);
+    let cp,b=null;
+    if(t.in_checkmate())cp=-10000;else if(t.in_draw()||t.in_stalemate())cp=0;else{const r=await evalFen(fens[i],depth);cp=r.cp;b=r.best}
+    evals.push(t.turn()==='w'?cp:-cp);best.push(b);onProg&&onProg(i+1,fens.length);
+  }
+  moves.forEach((m,i)=>{
+    const sgn=m.c==='w'?1:-1,before=winp(sgn*evals[i]),after=winp(sgn*evals[i+1]);
+    const loss=Math.max(0,before-after);
+    m.loss=Math.round(loss*10)/10;
+    m.cls=best[i]&&m.u===best[i]?'best':loss>=15?'blunder':loss>=10?'mistake':loss>=5?'inaccuracy':'ok';
+    const ply=i+1;m.phase=ply<=20?'opening':material(fens[i])<=26?'endgame':'middlegame';
+  });
+  const a={fens,evals,best,moves,my:g.color[0]};
+  S.an[url]=a;
+  const keep=Object.keys(S.an).slice(-60),slim={};keep.forEach(k=>slim[k]=S.an[k]);S.an=slim;
+  store.set('cc_an_'+S.user,S.an);
+  return a;
+}
+function enqueue(url){if(!queue.includes(url)&&!S.an[url])queue.push(url);runQueue()}
+async function runQueue(){
+  if(busy)return;busy=true;stopFlag=false;$('#qbox').hidden=false;
+  try{
+    while(queue.length&&!stopFlag){
+      const url=queue[0],g=S.games.find(x=>x.url===url);
+      $('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · ${queue.length} in queue`;
+      try{await analyze(url,(d,n)=>{$('#qbar').style.width=(d/n*100)+'%'})}catch(e){status('The engine could not load. Reload the page and try again.',1);break}
+      queue.shift();renderAll();
+    }
+  }finally{busy=false;queue=stopFlag?[]:queue;$('#qbox').hidden=true;renderAll()}
+}
+
+/* ---------- board ---------- */
+function boardHTML(fen,{flip=false,hl=[],best=[],sel=null,click=false}={}){
+  const rows=fen.split(' ')[0].split('/'),cells={};
+  rows.forEach((r,ri)=>{let f=0;for(const ch of r){if(/\d/.test(ch))f+=+ch;else{cells[FILES[f]+(8-ri)]=ch;f++}}});
+  let h='';
+  for(let r=0;r<8;r++)for(let f=0;f<8;f++){
+    const file=flip?7-f:f,rank=flip?r+1:8-r,sq=FILES[file]+rank,p=cells[sq];
+    const light=(file+rank)%2===0;
+    const cls=['sq',light?'l':'d',hl.includes(sq)?'hl':'',best.includes(sq)?'best':'',sel===sq?'sel':'',click?'click':''].join(' ');
+    const piece=p?`<span class="${p===p.toUpperCase()?'pw':'pb'}">${GLYPH[p.toLowerCase()]}︎</span>`:'';
+    const co=(r===7?`<span class="coord f">${FILES[file]}</span>`:'')+(f===0?`<span class="coord r">${rank}</span>`:'');
+    h+=`<button class="${cls}" data-sq="${sq}" ${click?'':'tabindex="-1"'} aria-label="${sq}${p?' '+p:''}">${piece}${co}</button>`;
+  }
+  return `<div class="board">${h}</div>`;
+}
+function uciToSan(fen,u){if(!u)return '';const c=new Chess(fen);const m=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});return m?m.san:u}
+
+/* ---------- views ---------- */
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+function score(list){const w=list.filter(g=>g.res==='W').length,d=list.filter(g=>g.res==='D').length;return{n:list.length,w,d,l:list.length-w-d,s:list.length?Math.round((w+d/2)/list.length*100):0}}
+function myMoves(){const out=[];for(const g of S.games){const a=S.an[g.url];if(!a)continue;a.moves.forEach((m,i)=>{if(m.c===a.my)out.push({...m,url:g.url,ply:i})})}return out}
+
+function tips(){
+  const T=[],G=S.games;if(!G.length)return T;
+  const an=G.filter(g=>S.an[g.url]),mm=myMoves();
+  if(an.length){
+    const bl=mm.filter(m=>m.cls==='blunder').length/an.length;
+    if(bl>=1)T.push(['Tactics first',`You make about ${bl.toFixed(1)} blunders per game. Before every move, check what your opponent's last move attacks, and look at all checks and captures. Do the puzzles tab daily.`]);
+    const ph={opening:0,middlegame:0,endgame:0};mm.filter(m=>m.cls==='blunder'||m.cls==='mistake').forEach(m=>ph[m.phase]++);
+    const tot=ph.opening+ph.middlegame+ph.endgame;
+    if(tot){const worst=Object.entries(ph).sort((a,b)=>b[1]-a[1])[0];
+      const adv={opening:'Learn the first 6–8 moves and the ideas of your main openings (see Openings tab).',middlegame:'Slow down in the middlegame: find a plan, check which pieces are undefended, and don\'t rush captures.',endgame:'Study basic endgames: king activity, king + pawn vs king, and rook endgames (Lucena/Philidor).'};
+      T.push([`Most mistakes in the ${worst[0]}`,`${pct(worst[1],tot)}% of your mistakes and blunders happen there. ${adv[worst[0]]}`]);}
+  }
+  const losses=G.filter(g=>g.res==='L'),tout=losses.filter(g=>g.how==='timeout').length;
+  if(losses.length>=5&&tout/losses.length>=.25)T.push(['Watch the clock',`${pct(tout,losses.length)}% of your losses are on time. Play a slightly longer time control or spend less time early in the game.`]);
+  const wS=score(G.filter(g=>g.color==='white')),bS=score(G.filter(g=>g.color==='black'));
+  if(wS.n>=5&&bS.n>=5&&Math.abs(wS.s-bS.s)>=12){const weak=wS.s<bS.s?'White':'Black';T.push([`Weaker with ${weak}`,`You score ${weak==='White'?wS.s:bS.s}% with ${weak} vs ${weak==='White'?bS.s:wS.s}% with the other colour. Your ${weak} repertoire needs work.`])}
+  const op=openingStats().filter(o=>o.n>=3).sort((a,b)=>a.s-b.s)[0];
+  if(op&&op.s<45)T.push([`Fix the ${op.name} as ${op.color}`,`${op.n} games, only ${op.s}% score. Open the Openings tab for the key ideas.`]);
+  const accs=G.filter(g=>g.acc!=null).map(g=>g.acc);
+  if(accs.length>=3)T.push(['Accuracy',`Average chess.com accuracy in reviewed games: ${Math.round(accs.reduce((a,b)=>a+b,0)/accs.length)}%.`]);
+  if(!an.length)T.push(['Analyse a few games','The more games you analyse, the more precise these tips get. Start with your newest losses.']);
+  return T;
+}
+function renderOverview(){
+  const el=$('#overview');
+  if(!S.games.length){el.innerHTML=`<div class="empty" style="margin-top:24px">Type a chess.com username above and press <b>Sync games</b>.</div>`;return}
+  const G=S.games,all=score(G),byTc={};G.forEach(g=>{(byTc[g.tc]=byTc[g.tc]||[]).push(g)});
+  const ratings=Object.entries(byTc).map(([tc,l])=>`<div class="card"><div class="mute small">${esc(tc)} rating</div><div class="big">${l[0].rating}</div><div class="small mute">${score(l).s}% score in ${l.length} games</div></div>`).join('');
+  const an=G.filter(g=>S.an[g.url]).length,mm=myMoves();
+  const cnt=k=>mm.filter(m=>m.cls===k).length;
+  const ph=['opening','middlegame','endgame'].map(p=>{const e=mm.filter(m=>m.phase===p&&(m.cls==='blunder'||m.cls==='mistake')).length,t=mm.filter(m=>m.phase===p).length;return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between"><span>${p[0].toUpperCase()+p.slice(1)}</span><span class="mute">${e} errors / ${t} moves</span></div><div class="bar"><i style="width:${t?Math.min(100,e/t*400):0}%;background:var(--red)"></i></div></div>`}).join('');
+  el.innerHTML=`
+  <h2>What to work on</h2>
+  <ol class="tips">${tips().map(([h,t])=>`<li><b>${esc(h)}</b>${esc(t)}</li>`).join('')}</ol>
+  <div class="grid">${ratings}
+    <div class="card"><div class="mute small">Results, last ${all.n} games</div><div class="big">${all.w}–${all.d}–${all.l}</div><div class="small mute">win / draw / loss</div></div>
+  </div>
+  <h2>Mistakes by phase</h2>
+  ${an?`<div class="grid"><div class="card">${ph}</div><div class="card">
+    <p><span class="tag blunder">Blunders</span> ${cnt('blunder')}</p><p><span class="tag mistake">Mistakes</span> ${cnt('mistake')}</p><p><span class="tag inaccuracy">Inaccuracies</span> ${cnt('inaccuracy')}</p>
+    <p class="small mute">From ${an} analysed game${an>1?'s':''}.</p></div></div>`:'<p class="mute">No games analysed yet.</p>'}
+  <div class="navbtns"><button id="anLosses">Analyse my last 5 losses</button><button class="ghost" id="an10">Analyse last 10 games</button></div>`;
+  $('#anLosses').onclick=()=>G.filter(g=>g.res==='L').slice(0,5).forEach(g=>enqueue(g.url));
+  $('#an10').onclick=()=>G.slice(0,10).forEach(g=>enqueue(g.url));
+}
+function renderGames(){
+  const el=$('#games');
+  if(!S.games.length){el.innerHTML='<div class="empty" style="margin-top:24px">No games loaded yet.</div>';return}
+  el.innerHTML=`<h2>Recent games</h2><div class="scroll"><table class="stack"><thead><tr><th>Date</th><th>Opponent</th><th>Colour</th><th>Result</th><th>Opening</th><th class="n">Accuracy</th><th></th></tr></thead><tbody>
+  ${S.games.map(g=>{const a=S.an[g.url],q=queue.includes(g.url);
+    const b=a?`<span class="tag blunder">${a.moves.filter(m=>m.c===a.my&&m.cls==='blunder').length}</span>`:'';
+    return `<tr><td>${new Date(g.end*1000).toLocaleDateString()}</td><td>${esc(g.opp)} <span class="mute">(${g.oppR})</span></td><td>${g.color}</td><td class="${g.res}">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'} <span class="small mute">${esc(g.how)}</span></td><td>${esc(g.opening)}</td><td class="n">${g.acc!=null?g.acc+'%':''}</td>
+    <td>${a?`<button class="ghost" data-rev="${esc(g.url)}">Review ${b}</button>`:`<button class="ghost" data-an="${esc(g.url)}" ${q?'disabled':''}>${q?'Queued':'Analyse'}</button>`}</td></tr>`}).join('')}
+  </tbody></table></div>`;
+  el.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>{enqueue(b.dataset.an);renderGames()});
+  el.querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{S.rev={url:b.dataset.rev,i:0};setTab('review')});
+}
+function renderReview(){
+  const el=$('#review');
+  const url=S.rev.url&&S.an[S.rev.url]?S.rev.url:S.games.find(g=>S.an[g.url])?.url;
+  if(!url){el.innerHTML='<div class="empty" style="margin-top:24px">Analyse a game in the Games tab, then review it here.</div>';return}
+  S.rev.url=url;
+  const a=S.an[url],g=S.games.find(x=>x.url===url)||{},i=Math.max(0,Math.min(S.rev.i,a.fens.length-1));S.rev.i=i;
+  const m=i>0?a.moves[i-1]:null,flip=a.my==='b';
+  const hl=m?[m.u.slice(0,2),m.u.slice(2,4)]:[];
+  const bestU=m&&m.cls!=='best'&&m.cls!=='ok'?a.best[i-1]:null;
+  const wp=winp(a.evals[i]);const ev=a.evals[i];
+  const evTxt=Math.abs(ev)>=9000?`Mate`:`${ev>0?'+':''}${(ev/100).toFixed(1)}`;
+  let info='<p class="mute">Start position. Use the arrows or tap a move.</p>';
+  if(m){
+    const who=m.c===a.my?'You':esc(g.opp);
+    info=`<p><b>${Math.ceil(i/2)}${m.c==='w'?'.':'...'} ${esc(m.san)}</b> ${m.cls==='best'?'<span class="tag good">Best move</span>':m.cls!=='ok'?`<span class="tag ${m.cls}">${m.cls}</span>`:''}</p>`+
+      (bestU?`<p>${who} played ${esc(m.san)}. Better was <b>${esc(uciToSan(a.fens[i-1],bestU))}</b> (green squares). Win chance dropped by ${m.loss}%.</p>`:'')+
+      `<p class="small mute">Eval ${evTxt} · ${m.phase}</p>`;
+  }
+  const ml=[];for(let k=0;k<a.moves.length;k+=2){ml.push(`<span class="mute">${k/2+1}.</span>`);for(const j of [k,k+1]){const mv=a.moves[j];ml.push(mv?`<button class="mv ${mv.c===a.my?mv.cls:''} ${j+1===i?'on':''}" data-i="${j+1}">${esc(mv.san)}</button>`:'<span></span>')}}
+  const games=S.games.filter(x=>S.an[x.url]);
+  el.innerHTML=`<h2>Review vs ${esc(g.opp)} <span class="${g.res}">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'}</span></h2>
+  <p><select id="revSel" aria-label="Pick a game">${games.map(x=>`<option value="${esc(x.url)}" ${x.url===url?'selected':''}>${new Date(x.end*1000).toLocaleDateString()} · vs ${esc(x.opp)} · ${x.res}</option>`).join('')}</select></p>
+  <div class="review"><div>
+    <div class="boardwrap"><div class="evalbar" title="White's winning chance"><i style="height:${flip?100-wp:wp}%;${flip?'background:#151515':''}"></i></div>${boardHTML(a.fens[i],{flip,hl,best:bestU?[bestU.slice(0,2),bestU.slice(2,4)]:[]})}</div>
+    <div class="navbtns"><button class="ghost" data-go="0" aria-label="First">|&lt;</button><button class="ghost" data-go="-1" aria-label="Back">&lt;</button><button class="ghost" data-go="1" aria-label="Next">&gt;</button><button class="ghost" data-go="999" aria-label="Last">&gt;|</button><button class="ghost" id="nextErr">Next mistake</button></div>
+  </div><div>${info}<div class="moves">${ml.join('')}</div><p class="small mute" style="margin-top:10px"><a href="${esc(url)}" target="_blank" rel="noopener">Open on chess.com</a></p></div></div>`;
+  if(flip){const bar=el.querySelector('.evalbar');bar.style.background='#f4f4f0'}
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const d=+b.dataset.go;S.rev.i=d===0?0:d===999?a.fens.length-1:S.rev.i+d;renderReview()});
+  el.querySelectorAll('.mv').forEach(b=>b.onclick=()=>{S.rev.i=+b.dataset.i;renderReview()});
+  $('#revSel').onchange=e=>{S.rev={url:e.target.value,i:0};renderReview()};
+  $('#nextErr').onclick=()=>{const j=a.moves.findIndex((mv,k)=>k+1>S.rev.i&&mv.c===a.my&&(mv.cls==='blunder'||mv.cls==='mistake'));if(j>=0){S.rev.i=j+1;renderReview()}};
+}
+function buildPuzzles(){
+  const L=[];
+  for(const g of S.games){const a=S.an[g.url];if(!a)continue;
+    a.moves.forEach((m,i)=>{if(m.c===a.my&&(m.cls==='blunder'||m.cls==='mistake')&&a.best[i])L.push({id:g.url+'#'+i,fen:a.fens[i],best:a.best[i],played:m.san,loss:m.loss,opp:g.opp,phase:m.phase})});}
+  return L.sort((x,y)=>y.loss-x.loss);
+}
+function renderPuzzles(){
+  const el=$('#puzzles');S.pz.list=buildPuzzles();
+  const L=S.pz.list;
+  if(!S.pz.started&&L.length){S.pz.started=true;const f=L.findIndex(x=>!S.pz.done[x.id]);S.pz.i=f<0?0:f}
+  if(!L.length){el.innerHTML='<div class="empty" style="margin-top:24px">Puzzles come from your own mistakes. Analyse a few games first.</div>';return}
+  const i=S.pz.i%L.length,p=L[i],flip=p.fen.split(' ')[1]==='b';
+  const solved=Object.keys(S.pz.done).filter(k=>L.some(x=>x.id===k)).length;
+  el.innerHTML=`<h2>Puzzle ${i+1} of ${L.length}</h2><p class="mute">${solved} solved. These positions come from your games: find the move you missed.</p>
+  <div class="review"><div>${boardHTML(p.fen,{flip,sel:S.pz.sel,click:true,best:S.pz.show?[p.best.slice(0,2),p.best.slice(2,4)]:[]})}
+  <div class="navbtns"><button class="ghost" id="pzShow">Show solution</button><button id="pzNext">Next puzzle</button></div></div>
+  <div><p><b>${flip?'Black':'White'} to move.</b> In the game vs ${esc(p.opp)} you played <b>${esc(p.played)}</b> (${p.phase}) and lost ${p.loss}% win chance.</p>
+  <p>Tap a piece, then tap where it should go.</p><p id="pzMsg">${S.pz.msg}</p></div></div>`;
+  el.querySelectorAll('.sq').forEach(b=>b.onclick=()=>{
+    const sq=b.dataset.sq,c=new Chess(p.fen);
+    if(!S.pz.sel){const pc=c.get(sq);if(pc&&pc.color===c.turn()){S.pz.sel=sq;S.pz.msg='';renderPuzzles()}return}
+    const from=S.pz.sel;S.pz.sel=null;
+    const pc=c.get(sq);if(pc&&pc.color===c.turn()&&sq!==from){S.pz.sel=sq;renderPuzzles();return}
+    const mv=c.move({from,to:sq,promotion:'q'});
+    if(!mv){S.pz.msg='That move is not legal.';renderPuzzles();return}
+    const u=from+sq+(mv.promotion||'');
+    if(u===p.best||u.slice(0,4)===p.best.slice(0,4)&&p.best.length===4){S.pz.done[p.id]=1;store.set('cc_solved',S.pz.done);S.pz.msg=`<span class="W">Correct: ${esc(mv.san)}.</span> Press Next puzzle.`}
+    else S.pz.msg=`<span class="L">${esc(mv.san)} is not the engine's move.</span> Try again or show the solution.`;
+    renderPuzzles();
+  });
+  $('#pzShow').onclick=()=>{S.pz.show=true;S.pz.msg=`Solution: <b>${esc(uciToSan(p.fen,p.best))}</b>`;renderPuzzles()};
+  $('#pzNext').onclick=()=>{S.pz.i=i+1;S.pz.sel=null;S.pz.show=false;S.pz.msg='';renderPuzzles()};
+}
+function openingStats(){
+  const map={};
+  for(const g of S.games){const k=g.color+'|'+g.opening;(map[k]=map[k]||{name:g.opening,color:g.color,list:[]}).list.push(g)}
+  return Object.values(map).map(o=>({...o,...score(o.list)})).sort((a,b)=>b.n-a.n);
+}
+function renderOpenings(){
+  const el=$('#openings');
+  if(!S.games.length){el.innerHTML='<div class="empty" style="margin-top:24px">No games loaded yet.</div>';return}
+  const st=openingStats();
+  const table=c=>{const rows=st.filter(o=>o.color===c);return rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Opening</th><th class="n">Games</th><th class="n">W–D–L</th><th class="n">Score</th></tr></thead><tbody>${rows.map(o=>`<tr><td>${esc(o.name)}</td><td class="n">${o.n}</td><td class="n">${o.w}–${o.d}–${o.l}</td><td class="n ${o.n>=3&&o.s<45?'L':''}">${o.s}%</td></tr>`).join('')}</tbody></table></div>`:'<p class="mute">No games.</p>'};
+  const seen=new Set(),cards=[];
+  for(const o of st){const t=theoryFor(o.name);if(!t||seen.has(t.k+o.color))continue;seen.add(t.k+o.color);
+    cards.push(`<div class="theory"><h3>${esc(t.name)} as ${o.color} <span class="small mute">· ${o.n} games, ${o.s}%</span></h3><p><code>${esc(t.line)}</code></p><p>${esc(o.color==='white'?t.w:t.b)}</p><p class="small"><a href="https://lichess.org/opening/${encodeURIComponent(t.name.replace(/ /g,'_'))}" target="_blank" rel="noopener">Main lines on lichess</a></p></div>`);
+    if(cards.length>=6)break;}
+  el.innerHTML=`<h2>Your openings</h2><div class="grid"><div><h3>As White</h3>${table('white')}</div><div><h3>As Black</h3>${table('black')}</div></div>
+  <h2>Theory for what you actually play</h2>${cards.join('')||'<p class="mute">No theory notes for these openings yet.</p>'}`;
+}
+const R={overview:renderOverview,games:renderGames,review:renderReview,puzzles:renderPuzzles,openings:renderOpenings};
+function renderAll(){R[S.tab]()}
+function setTab(t){S.tab=t;document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));for(const k in R)$('#'+k).hidden=k!==t;R[t]()}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$('#syncForm').onsubmit=e=>{e.preventDefault();sync(false)};
+$('#stopBtn').onclick=()=>{stopFlag=true};
+document.addEventListener('keydown',e=>{if(S.tab!=='review'||e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(e.key==='ArrowRight'){S.rev.i++;renderReview()}if(e.key==='ArrowLeft'){S.rev.i--;renderReview()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.user&&Date.now()-store.get('cc_last',0)>5*60e3)sync(true)});
+setInterval(()=>{if(S.user&&document.visibilityState==='visible')sync(true)},10*60e3);
+const saved=store.get('cc_user','');
+if(saved){$('#user').value=saved;S.user=saved;S.games=store.get('cc_g_'+saved,[]);S.an=store.get('cc_an_'+saved,{});sync(true)}
+setTab('overview');
+}
+</script>
+</body>
+</html>
