@@ -89,8 +89,8 @@ td.n,th.n{text-align:right;white-space:nowrap}
     <input id="user" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="chess.com username">
     <button id="syncBtn">Sync games</button>
     <select id="depth" aria-label="Analysis strength">
-      <option value="10">Fast analysis</option>
-      <option value="13">Deeper analysis</option>
+      <option value="12">Fast analysis</option>
+      <option value="16">Deeper analysis</option>
     </select>
   </form>
   <div class="status" id="status"></div>
@@ -118,7 +118,6 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DRAWS=['agreed','repetition','stalemate','insufficient','50move','timevsinsufficient'];
-const SF_URL='https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 const GLYPH={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
 const FILES='abcdefgh';
 
@@ -208,11 +207,11 @@ async function sync(auto){
 let engP=null,eng=null,engChain=Promise.resolve();
 function engine(){
   if(engP)return engP;
-  engP=fetch(SF_URL).then(r=>r.text()).then(src=>new Promise(res=>{
-    eng=new Worker(URL.createObjectURL(new Blob([src],{type:'application/javascript'})));
+  engP=new Promise((res,rej)=>{
+    eng=new Worker('engine/stockfish.js');eng.onerror=()=>rej(new Error('engine'));
     eng.onmessage=e=>{if(String(e.data??e).includes('uciok'))res()};
     eng.postMessage('uci');
-  }));
+  });
   engP.catch(()=>{engP=null});
   return engP;
 }
@@ -271,7 +270,7 @@ async function runQueue(){
     while(queue.length&&!stopFlag){
       const url=queue[0],g=S.games.find(x=>x.url===url);
       $('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · ${queue.length} in queue`;
-      try{await analyze(url,(d,n)=>{$('#qbar').style.width=(d/n*100)+'%'})}catch(e){status('The engine could not load. Reload the page and try again.',1);break}
+      try{await analyze(url,(d,n)=>{$('#qbar').style.width=(d/n*100)+'%';$('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · move ${d} of ${n} · ${queue.length} game${queue.length>1?'s':''} in queue`})}catch(e){status('The engine could not load. Reload the page and try again.',1);break}
       queue.shift();renderAll();
     }
   }finally{busy=false;queue=stopFlag?[]:queue;$('#qbox').hidden=true;renderAll()}
