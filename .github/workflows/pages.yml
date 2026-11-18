@@ -1,0 +1,34 @@
+name: Deploy chess coach
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Stockfish engine
+        run: |
+          mkdir -p site/engine
+          cp index.html site/
+          base=https://unpkg.com/stockfish@17.1.0/src/stockfish-17.1-lite-single-03e3232
+          curl -fsSL "$base.js" -o site/engine/stockfish.js
+          curl -fsSL "$base.wasm" -o site/engine/stockfish.wasm
+          ls -la site site/engine
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4
