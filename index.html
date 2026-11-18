@@ -6,84 +6,104 @@
 <title>Chess Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.base.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.brown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessground@9.2.1/assets/chessground.cburnett.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <style>
 /* VOICE: club coach, direct, no fluff
    IDEA: a tournament scoresheet next to a wooden board
-   PICTURE: the board itself, big, with the eval bar beside it
+   PICTURE: the board with arrows, the eval curve under it
    COLOUR and TYPE: white paper, black ink, walnut board, red for blunders; Archivo wide
-   LAYOUT: strict left edge, thick top rule, tabs, stacks on phones */
-:root{color-scheme:light dark;--bg:light-dark(#fff,#121211);--ink:light-dark(#141414,#ecebe6);--mute:light-dark(#666,#9a9a94);--line:light-dark(#e2e2de,#2b2b29);--card:light-dark(#f6f6f3,#1b1b1a);
---red:#e4002b;--orange:#ef8a00;--yellow:#d9b400;--good:#2f8a55;--l:#ecd9b5;--d:#b0805a}
+   LAYOUT: strict left edge, thick top rule, board left / coach notes right, stacks on phones */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#121211);--ink:light-dark(#141414,#ecebe6);--mute:light-dark(#666,#9a9a94);--line:light-dark(#e4e4df,#2c2c2a);--card:light-dark(#f5f5f1,#1b1b1a);
+--red:#e4002b;--orange:#ef8a00;--yellow:#d4ad00;--good:#2f8a55;--blue:#2f6fd1}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
-.band{padding:clamp(20px,3.5vw,48px) max(5vw,16px);max-width:1240px;margin:0 auto}
-header.band{border-top:8px solid var(--ink)}
-h1{font-size:clamp(32px,6vw,52px);line-height:1.05;margin:0 0 6px;font-stretch:112%;font-weight:800;letter-spacing:-.01em}
-h2{font-size:24px;line-height:1.15;margin:28px 0 12px;font-stretch:108%}
-h3{font-size:17px;margin:0 0 6px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(18px,3vw,40px) max(4vw,14px);max-width:1240px;margin:0 auto}
+header.band{border-top:8px solid var(--ink);padding-bottom:0}
+h1{font-size:clamp(32px,6vw,50px);line-height:1.05;margin:0 0 4px;font-stretch:112%;font-weight:800}
+h2{font-size:24px;line-height:1.15;margin:26px 0 12px;font-stretch:108%}
+h3{font-size:16px;margin:0 0 8px;font-stretch:105%}
 p{margin:0 0 10px}.mute{color:var(--mute)}.small{font-size:13px}
-form.sync{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-input,select,button{font:inherit;font-size:16px;min-height:44px;border-radius:6px}
+form.sync{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+input,select,button{font:inherit;font-size:16px;min-height:44px;border-radius:8px}
 input,select{border:2px solid var(--ink);background:var(--bg);color:var(--ink);padding:0 12px}
-input{flex:1 1 220px;max-width:360px}
+input{flex:1 1 200px;max-width:340px}
 button{border:2px solid var(--ink);background:var(--ink);color:var(--bg);padding:0 16px;font-weight:600;cursor:pointer}
 button.ghost{background:transparent;color:var(--ink)}
+button.sm{min-height:36px;padding:0 12px;font-size:14px}
 button:disabled{opacity:.45;cursor:default}
 :focus-visible{outline:3px solid var(--red);outline-offset:2px}
-nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-top:20px}
-nav.tabs button{background:transparent;color:var(--ink);border:0;border-radius:6px 6px 0 0;flex:none}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--ink);margin-top:18px}
+nav.tabs button{background:transparent;color:var(--ink);border:0;border-radius:8px 8px 0 0;flex:none}
 nav.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg)}
-.status{min-height:24px;margin-top:10px;font-size:15px}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--ink)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px}
-.card{background:var(--card);border-radius:10px;padding:16px}
+.status{min-height:22px;margin-top:8px;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(250px,100%),1fr));gap:12px}
+.card{background:var(--card);border-radius:12px;padding:16px}
 .big{font-size:clamp(28px,5vw,40px);font-weight:800;font-stretch:112%;line-height:1.05}
-.tips li{margin-bottom:10px}.tips b{display:block}
+.tips{padding-left:20px}.tips li{margin-bottom:10px}.tips b{display:block}
 table{border-collapse:collapse;width:100%;font-size:15px}
-th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
 th{font-size:13px;color:var(--mute);font-weight:600}
-td.n,th.n{text-align:right;white-space:nowrap}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .W{color:var(--good);font-weight:700}.L{color:var(--red);font-weight:700}.D{color:var(--mute);font-weight:700}
 .scroll{overflow-x:auto}
-/* board */
-.review{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:20px;align-items:start}
-.boardwrap{display:flex;gap:8px}
-.board{display:grid;grid-template-columns:repeat(8,1fr);width:min(88vw,480px);aspect-ratio:1;border:3px solid var(--ink);border-radius:4px;overflow:hidden;user-select:none}
-.sq{position:relative;border:0;padding:0;border-radius:0;min-height:0;display:flex;align-items:center;justify-content:center;font-size:min(9vw,50px);line-height:1;cursor:default;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
-.sq.l{background:var(--l)}.sq.d{background:var(--d)}
-.sq.hl::after{content:"";position:absolute;inset:0;background:rgba(255,214,0,.42)}
-.sq.best::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--good)}
-.sq.sel::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--red)}
-.sq.click{cursor:pointer}
-.pw{color:#fff;-webkit-text-stroke:1.4px #222;text-shadow:0 1px 1px rgba(0,0,0,.35)}.pb{color:#151515;text-shadow:0 1px 0 rgba(255,255,255,.25)}
-.coord{position:absolute;font:600 10px Archivo,sans-serif;opacity:.7;color:#3a2a1c}.coord.f{right:3px;bottom:2px}.coord.r{left:3px;top:2px}
-.evalbar{width:16px;border:2px solid var(--ink);border-radius:4px;background:#151515;position:relative;overflow:hidden}
-.evalbar i{position:absolute;left:0;right:0;bottom:0;background:#f4f4f0;transition:height .25s}
-@media(prefers-reduced-motion:reduce){.evalbar i{transition:none}}
-.navbtns{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}.navbtns button{min-width:52px}
-.moves{display:grid;grid-template-columns:2.6em 1fr 1fr;gap:2px 6px;max-height:420px;overflow-y:auto;font-variant-numeric:tabular-nums;font-size:15px}
-.mv{background:none;border:0;color:var(--ink);text-align:left;padding:4px 6px;min-height:32px;border-radius:4px;font-weight:500}
-.mv.on{background:var(--ink);color:var(--bg)}
-.mv.blunder{color:var(--red);font-weight:800}.mv.mistake{color:var(--orange);font-weight:700}.mv.inaccuracy{color:var(--yellow);font-weight:700}
-.mv.on.blunder,.mv.on.mistake,.mv.on.inaccuracy{color:var(--bg)}
-.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 8px;border-radius:99px;color:#fff}
-.tag.blunder{background:var(--red)}.tag.mistake{background:var(--orange)}.tag.inaccuracy{background:var(--yellow);color:#111}.tag.good{background:var(--good)}
-.progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}.progress i{display:block;height:100%;background:var(--red);width:0}
-.theory{border-left:4px solid var(--ink);padding:2px 0 2px 14px;margin-bottom:18px}
-.theory code{font-size:14px}
-.empty{padding:28px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--mute)}
+.progress{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}.progress i{display:block;height:100%;background:var(--red);width:0;transition:width .2s}
+.empty{padding:28px;border:2px dashed var(--line);border-radius:12px;text-align:center;color:var(--mute);margin-top:22px}
 [hidden]{display:none!important}
-@media(max-width:820px){.review{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--mute)}.stack td:empty{display:none}}
+/* board */
+.cgb{width:100%;aspect-ratio:1/1;position:relative}
+.boardrow{display:grid;grid-template-columns:18px minmax(0,1fr);gap:8px}
+.evalbar{border-radius:6px;background:#1c1c1c;position:relative;overflow:hidden}
+.evalbar i{position:absolute;left:0;right:0;bottom:0;background:#f2f2ee;transition:height .25s}
+.evalbar b{position:absolute;left:0;right:0;font-size:10px;text-align:center;font-weight:700}
+.navbtns{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}.navbtns button{min-width:48px}
+.rv{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:24px;align-items:start}
+@media(max-width:860px){.rv{grid-template-columns:minmax(0,1fr)}}
+.graph{position:relative;height:110px;border-radius:8px;overflow:hidden;cursor:pointer;background:#1c1c1c}
+.graph svg{position:absolute;inset:0;width:100%;height:100%}
+.players{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.players .p{background:var(--card);border-radius:12px;padding:12px}
+.players .acc{font-size:30px;font-weight:800;font-stretch:112%;line-height:1}
+.ctab td,.ctab th{padding:6px 8px}
+.sym{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;vertical-align:middle;flex:none}
+.s-best{background:var(--good)}.s-excellent{background:#5aa66f}.s-good{background:#8aa58f}.s-inaccuracy{background:var(--yellow);color:#111}.s-mistake{background:var(--orange)}.s-blunder{background:var(--red)}
+.now{border-left:5px solid var(--ink);padding:10px 14px;background:var(--card);border-radius:0 12px 12px 0;margin-bottom:14px;min-height:96px}
+.now.blunder{border-color:var(--red)}.now.mistake{border-color:var(--orange)}.now.inaccuracy{border-color:var(--yellow)}.now.best,.now.excellent{border-color:var(--good)}
+.now .mv{font-size:22px;font-weight:800;font-stretch:110%}
+.keys{display:flex;flex-direction:column;gap:6px}
+.key{display:flex;gap:10px;align-items:flex-start;text-align:left;background:var(--card);color:var(--ink);border:2px solid transparent;border-radius:10px;padding:10px;font-weight:400;min-height:0}
+.key.on{border-color:var(--ink)}.key b{font-weight:800}
+.mlist{display:grid;grid-template-columns:2.4em 1fr 1fr;gap:2px 4px;max-height:300px;overflow-y:auto;font-variant-numeric:tabular-nums;font-size:15px;position:relative}
+.mvb{background:none;border:0;color:var(--ink);text-align:left;padding:3px 6px;min-height:30px;border-radius:6px;font-weight:500}
+.mvb.on{background:var(--ink);color:var(--bg)}
+.mvb .q{font-weight:800}.q-blunder{color:var(--red)}.q-mistake{color:var(--orange)}.q-inaccuracy{color:var(--yellow)}
+.mvb.on .q{color:inherit}
+.hbar{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:8px}
+.hbar .t{height:12px;background:var(--line);border-radius:6px;overflow:hidden}.hbar .t i{display:block;height:100%;background:var(--red);border-radius:6px}
+.fig{position:relative;height:200px}.fig svg{position:absolute;inset:0;width:100%;height:100%}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--ink);min-height:40px}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:99px;min-height:36px;padding:0 12px;font-size:14px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.chip .c{opacity:.7;margin-left:4px}
+.pzmsg{font-size:18px;font-weight:700;min-height:28px;margin:6px 0 10px}
+.ok{color:var(--good)}.bad{color:var(--red)}
+.theory{border-left:4px solid var(--ink);padding:2px 0 2px 14px;margin-bottom:18px}
+@media(prefers-reduced-motion:reduce){.evalbar i,.progress i{transition:none}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;color:var(--mute)}.stack td:empty{display:none}
+ .players .acc{font-size:24px}.hbar{grid-template-columns:minmax(0,7em) minmax(0,1fr) auto}}
 </style>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 </head>
 <body>
 <header class="band">
   <h1>Chess Coach</h1>
-  <p class="mute">Enter a chess.com username. It loads the recent games, checks them with Stockfish and tells you what to work on.</p>
+  <p class="mute">Enter a chess.com username. It loads the recent games, checks them with Stockfish and trains exactly what goes wrong.</p>
   <form class="sync" id="syncForm">
     <label for="user" hidden>chess.com username</label>
     <input id="user" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="chess.com username">
@@ -94,7 +114,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
     </select>
   </form>
   <div class="status" id="status"></div>
-  <div id="qbox" hidden><div class="progress"><i id="qbar"></i></div><span class="small" id="qtxt"></span> <button class="ghost small" id="stopBtn" style="min-height:32px">Stop</button></div>
+  <div id="qbox" hidden><div class="progress"><i id="qbar"></i></div><span class="small" id="qtxt"></span> <button class="ghost sm" id="stopBtn">Stop</button></div>
   <nav class="tabs" role="tablist">
     <button data-tab="overview" aria-selected="true">Coach</button>
     <button data-tab="games">Games</button>
@@ -112,64 +132,58 @@ td.n,th.n{text-align:right;white-space:nowrap}
   <section id="openings" hidden></section>
 </main>
 
-<script>
-{
+<script type="module">
+import {Chessground} from 'https://cdn.jsdelivr.net/npm/chessground@9.2.1/+esm';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DRAWS=['agreed','repetition','stalemate','insufficient','50move','timevsinsufficient'];
-const GLYPH={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
-const FILES='abcdefgh';
+const AN='cc_an2_';
 
 /* ---------- opening theory ---------- */
 const THEORY=[
- {k:'italian',name:'Italian Game',line:'1.e4 e5 2.Nf3 Nc6 3.Bc4',w:'Aim at f7. Play c3 and d3 (slow) or c3 + d4 (sharp) and castle early. Re1, h3 and Nbd2-f1-g3 is the classic regroup.',b:'Answer with 3...Bc5 or 3...Nf6. After 3...Nf6 4.Ng5 d5 5.exd5 never recapture 5...Nxd5?! carelessly: 5...Na5 is the main line.'},
+ {k:'italian',name:'Italian Game',line:'1.e4 e5 2.Nf3 Nc6 3.Bc4',w:'Aim at f7. Play c3 and d3 (slow) or c3 + d4 (sharp) and castle early. Re1, h3 and Nbd2-f1-g3 is the classic regroup.',b:'Answer with 3...Bc5 or 3...Nf6. After 3...Nf6 4.Ng5 d5 5.exd5 the main line is 5...Na5.'},
  {k:'two knights',name:'Two Knights Defense',line:'1.e4 e5 2.Nf3 Nc6 3.Bc4 Nf6',w:'4.d3 keeps it calm. 4.Ng5 attacks f7, but you have to know the lines after 4...d5.',b:'After 4.Ng5 d5 5.exd5 play 5...Na5 and accept a pawn down for quick development.'},
  {k:'ruy lopez',name:'Ruy Lopez',line:'1.e4 e5 2.Nf3 Nc6 3.Bb5',w:'You pressure the knight that guards e5, but e5 is not hanging yet. Plan: O-O, Re1, c3, d4 and h3.',b:'3...a6 4.Ba4 Nf6 5.O-O Be7 is the safe main road. The Berlin (3...Nf6) is solid if you like endgames.'},
- {k:'scotch',name:'Scotch Game',line:'1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4',w:'You open the centre at once. Develop quickly (Nc3, Be2/Bc4, O-O) and use the space.',b:'4...Bc5 or 4...Nf6 hit the d4 knight and e4 right away. Do not drift.'},
- {k:'four knights',name:'Four Knights Game',line:'1.e4 e5 2.Nf3 Nc6 3.Nc3 Nf6',w:'Calm and solid. 4.d4 (Scotch Four Knights) or 4.Bb5 gives you an easy plan.',b:'Mirror the development, castle, and look for ...d5 at the right moment.'},
+ {k:'scotch',name:'Scotch Game',line:'1.e4 e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4',w:'You open the centre at once. Develop quickly (Nc3, Be2/Bc4, O-O) and use the space.',b:'4...Bc5 or 4...Nf6 hit the d4 knight and e4 right away.'},
+ {k:'four knights',name:'Four Knights Game',line:'1.e4 e5 2.Nf3 Nc6 3.Nc3 Nf6',w:'Calm and solid. 4.d4 or 4.Bb5 gives you an easy plan.',b:'Mirror the development, castle, and look for ...d5 at the right moment.'},
  {k:'vienna',name:'Vienna Game',line:'1.e4 e5 2.Nc3',w:'Prepares f4. Bc4 + f4 gives quick attacking chances against f7.',b:'2...Nf6 and, when it works, ...d5 is the most direct answer.'},
- {k:'bishops opening',name:"Bishop's Opening",line:'1.e4 e5 2.Bc4',w:'Flexible: you can transpose to Italian or Vienna lines. d3, Nf3, c3 and O-O.',b:'2...Nf6 3.d3 c6 followed by ...d5 is a clean way to equalise.'},
- {k:'kings gambit',name:"King's Gambit",line:'1.e4 e5 2.f4',w:'You give a pawn for the open f-file and quick development. Castle fast and get the knights out.',b:'Taking with 2...exf4 is fine. Then strike back with ...d5 instead of clinging to the pawn.'},
- {k:'petrov',name:"Petrov's Defense",line:'1.e4 e5 2.Nf3 Nf6',w:'3.Nxe5 d6 4.Nf3 Nxe4 5.d4 gives you a small, safe edge.',b:'After 3.Nxe5 play 3...d6 FIRST. Taking 3...Nxe4? runs into 4.Qe2, and the knight is pinned.'},
- {k:'philidor',name:'Philidor Defense',line:'1.e4 e5 2.Nf3 d6',w:'3.d4 and develop freely. Black is solid but cramped, so open lines.',b:'Expect less space. Play ...Nf6, ...Be7, ...O-O and keep e5 firm.'},
- {k:'sicilian',name:'Sicilian Defense',line:'1.e4 c5',w:'The Open Sicilian (2.Nf3 + 3.d4) is the sharpest. The Alapin 2.c3 builds a d4 centre with less theory.',b:'You fight for d4 asymmetrically: the half-open c-file is your plan, so get rooks there. Watch the White kingside attack.'},
- {k:'french',name:'French Defense',line:'1.e4 e6 2.d4 d5',w:'3.e5 grabs space. Support d4 with c3 and Nf3, and attack the kingside.',b:'Your light-squared bishop is the problem piece. Break the chain with ...c5 and later ...f6.'},
- {k:'caro kann',name:'Caro-Kann Defense',line:'1.e4 c6 2.d4 d5',w:'The Advance (3.e5) is popular. Take space and stop the bishop from getting comfortable.',b:'Develop the light bishop to f5 or g4 BEFORE you play ...e6. After 3.e5 Bf5, follow with ...e6 and ...c5.'},
- {k:'scandinavian',name:'Scandinavian Defense',line:'1.e4 d5 2.exd5 Qxd5 3.Nc3',w:'Hit the queen with tempo (Nc3, later Bd2/Nb5 ideas). Grab the centre with d4.',b:'Put the queen on a5 or d6, then play ...c6, ...Bf5/Bg4, ...e6 and ...Nf6 fast.'},
- {k:'pirc',name:'Pirc Defense',line:'1.e4 d6 2.d4 Nf6 3.Nc3 g6',w:'Big centre. Be3, Qd2, f3 and an h4-h5 attack is a simple setup.',b:'Fianchetto, castle, then hit the centre with ...e5 or ...c5.'},
- {k:'modern',name:'Modern Defense',line:'1.e4 g6',w:'Take the full centre with d4 and Nc3, and do not overextend.',b:'Same idea as the Pirc: let White build, then strike with ...c5/...e5.'},
- {k:'alekhine',name:"Alekhine's Defense",line:'1.e4 Nf6 2.e5 Nd5',w:'Gain space but keep the pawns protected. 3.d4 d6 4.Nf3 is calm and good.',b:'Chip away at the pawn chain with ...d6. The space is a target.'},
- {k:'queens gambit declined',name:"Queen's Gambit Declined",line:'1.d4 d5 2.c4 e6',w:'Nc3, Bg5, e3 and Nf3. Minority attack (b4-b5) is the classic plan.',b:'Rock solid. Free your game with ...c5 or ...e5 and look after the c8 bishop.'},
- {k:'queens gambit accepted',name:"Queen's Gambit Accepted",line:'1.d4 d5 2.c4 dxc4',w:'You win the pawn back easily with e3 and Bxc4. Don\'t panic about it.',b:'Do not try to keep the pawn with ...b5. Develop and hit the centre with ...c5.'},
- {k:'slav',name:'Slav Defense',line:'1.d4 d5 2.c4 c6',w:'3.Nf3 Nf6 4.Nc3. Watch out for ...dxc4 and try to regain it with a4 and e3.',b:'Bring the light bishop out to f5 before ...e6. That is the whole point of the Slav.'},
- {k:'queens gambit',name:"Queen's Gambit",line:'1.d4 d5 2.c4',w:'Not a real gambit: after ...dxc4 the pawn comes back with e3 and Bxc4.',b:'Choose a system: ...e6 (Declined), ...c6 (Slav) or ...dxc4 (Accepted).'},
- {k:'london',name:'London System',line:'1.d4, Bf4, e3, Nf3, c3, Bd3, Nbd2',w:'Same setup every game. Plan Ne5, then a kingside push. Watch ...c5 + ...Qb6 hitting b2.',b:'Hit it early: ...c5 and ...Qb6 target b2, and ...Bd6 trades off the Bf4.'},
- {k:'kings indian',name:"King's Indian Defense",line:'1.d4 Nf6 2.c4 g6 3.Nc3 Bg7',w:'Big centre with e4. Mostly the queenside is where you play (c5, b4).',b:'Let White build, then ...e5 and, after the centre closes, ...f5 for a kingside attack.'},
- {k:'nimzo',name:'Nimzo-Indian Defense',line:'1.d4 Nf6 2.c4 e6 3.Nc3 Bb4',w:'Qc2 or e3 are the main tries. Keep the bishop pair and avoid doubled pawns cheaply.',b:'Pin the knight and fight for e4. Giving the bishop for the knight is often part of the plan.'},
- {k:'dutch',name:'Dutch Defense',line:'1.d4 f5',w:'Fianchetto with g3/Bg2 or punish loosely with an early e4 break.',b:'You fight for e4. Stonewall (...e6, ...d5, ...c6) is the simplest structure.'},
- {k:'english',name:'English Opening',line:'1.c4',w:'A reversed Sicilian. Fianchetto (g3, Bg2) and control d5.',b:'1...e5 or 1...Nf6 are easy answers. Take your share of the centre.'},
- {k:'reti',name:'Réti Opening',line:'1.Nf3 d5 2.c4',w:'Flexible: pressure d5 from the side and fianchetto.',b:'Keep it simple with ...d5, ...Nf6, ...e6 or ...c6.'},
- {k:'queens pawn',name:"Queen's Pawn Opening",line:'1.d4',w:'Without c4 you get a slower game. Pick a system (London, Colle) and learn its plans.',b:'Solid central play: ...d5, ...Nf6, ...e6 or ...Bf5 is enough to equalise.'},
- {k:'kings pawn',name:"King's Pawn Opening",line:'1.e4 e5',w:'Principles: knights before bishops, castle early, don\'t move the same piece twice.',b:'Fight for the centre and don\'t take the queen out early.'},
+ {k:'bishops opening',name:"Bishop's Opening",line:'1.e4 e5 2.Bc4',w:'Flexible: d3, Nf3, c3 and O-O.',b:'2...Nf6 3.d3 c6 followed by ...d5 equalises cleanly.'},
+ {k:'kings gambit',name:"King's Gambit",line:'1.e4 e5 2.f4',w:'You give a pawn for the f-file and quick development. Castle fast.',b:'Take with 2...exf4, then strike back with ...d5 instead of clinging to the pawn.'},
+ {k:'petrov',name:"Petrov's Defense",line:'1.e4 e5 2.Nf3 Nf6',w:'3.Nxe5 d6 4.Nf3 Nxe4 5.d4 gives a small, safe edge.',b:'After 3.Nxe5 play 3...d6 FIRST. 3...Nxe4? runs into 4.Qe2.'},
+ {k:'philidor',name:'Philidor Defense',line:'1.e4 e5 2.Nf3 d6',w:'3.d4 and develop freely. Open lines against the cramped setup.',b:'Play ...Nf6, ...Be7, ...O-O and keep e5 firm.'},
+ {k:'sicilian',name:'Sicilian Defense',line:'1.e4 c5',w:'Open Sicilian (2.Nf3 + 3.d4) is sharpest. The Alapin 2.c3 builds a d4 centre with less theory.',b:'Use the half-open c-file and get rooks there. Watch the White kingside attack.'},
+ {k:'french',name:'French Defense',line:'1.e4 e6 2.d4 d5',w:'3.e5 grabs space. Support d4 with c3 and Nf3 and attack the kingside.',b:'Your light-squared bishop is the problem piece. Break with ...c5 and later ...f6.'},
+ {k:'caro kann',name:'Caro-Kann Defense',line:'1.e4 c6 2.d4 d5',w:'The Advance (3.e5) takes space and annoys the bishop.',b:'Develop the light bishop to f5 or g4 BEFORE ...e6. After 3.e5 Bf5, follow with ...e6 and ...c5.'},
+ {k:'scandinavian',name:'Scandinavian Defense',line:'1.e4 d5 2.exd5 Qxd5 3.Nc3',w:'Hit the queen with tempo and grab the centre with d4.',b:'Queen to a5 or d6, then ...c6, ...Bf5/Bg4, ...e6 and ...Nf6 fast.'},
+ {k:'pirc',name:'Pirc Defense',line:'1.e4 d6 2.d4 Nf6 3.Nc3 g6',w:'Big centre. Be3, Qd2, f3 and h4-h5 is a simple attacking setup.',b:'Fianchetto, castle, then hit the centre with ...e5 or ...c5.'},
+ {k:'modern',name:'Modern Defense',line:'1.e4 g6',w:'Take the full centre with d4 and Nc3, without overextending.',b:'Let White build, then strike with ...c5/...e5.'},
+ {k:'alekhine',name:"Alekhine's Defense",line:'1.e4 Nf6 2.e5 Nd5',w:'Gain space but keep the pawns protected. 3.d4 d6 4.Nf3 is calm and good.',b:'Chip away at the pawn chain with ...d6.'},
+ {k:'queens gambit declined',name:"Queen's Gambit Declined",line:'1.d4 d5 2.c4 e6',w:'Nc3, Bg5, e3, Nf3. The minority attack (b4-b5) is the classic plan.',b:'Solid. Free your game with ...c5 or ...e5 and look after the c8 bishop.'},
+ {k:'queens gambit accepted',name:"Queen's Gambit Accepted",line:'1.d4 d5 2.c4 dxc4',w:'The pawn comes back with e3 and Bxc4.',b:'Don\'t try to keep the pawn with ...b5. Develop and hit the centre with ...c5.'},
+ {k:'slav',name:'Slav Defense',line:'1.d4 d5 2.c4 c6',w:'3.Nf3 Nf6 4.Nc3, and regain c4 with a4 and e3 if Black takes.',b:'Bring the light bishop to f5 before ...e6.'},
+ {k:'queens gambit',name:"Queen's Gambit",line:'1.d4 d5 2.c4',w:'Not a real gambit: after ...dxc4 the pawn comes back with e3 and Bxc4.',b:'Choose a system: ...e6, ...c6 or ...dxc4.'},
+ {k:'london',name:'London System',line:'1.d4, Bf4, e3, Nf3, c3, Bd3, Nbd2',w:'Same setup every game. Plan Ne5, then a kingside push. Watch ...c5 + ...Qb6 hitting b2.',b:'Hit it early: ...c5 and ...Qb6 target b2, ...Bd6 trades off the Bf4.'},
+ {k:'kings indian',name:"King's Indian Defense",line:'1.d4 Nf6 2.c4 g6 3.Nc3 Bg7',w:'Big centre with e4, then play on the queenside (c5, b4).',b:'...e5, and after the centre closes, ...f5 for a kingside attack.'},
+ {k:'nimzo',name:'Nimzo-Indian Defense',line:'1.d4 Nf6 2.c4 e6 3.Nc3 Bb4',w:'Qc2 or e3. Keep the bishop pair and avoid cheap doubled pawns.',b:'Pin the knight and fight for e4.'},
+ {k:'dutch',name:'Dutch Defense',line:'1.d4 f5',w:'Fianchetto with g3/Bg2 or punish with an early e4 break.',b:'Fight for e4. The Stonewall (...e6, ...d5, ...c6) is the simplest structure.'},
+ {k:'english',name:'English Opening',line:'1.c4',w:'A reversed Sicilian. Fianchetto (g3, Bg2) and control d5.',b:'1...e5 or 1...Nf6 are easy answers.'},
+ {k:'reti',name:'Réti Opening',line:'1.Nf3 d5 2.c4',w:'Pressure d5 from the side and fianchetto.',b:'Keep it simple with ...d5, ...Nf6, ...e6 or ...c6.'},
+ {k:'queens pawn',name:"Queen's Pawn Opening",line:'1.d4',w:'Without c4 the game is slower. Pick a system (London, Colle) and learn its plans.',b:'...d5, ...Nf6, ...e6 or ...Bf5 is enough to equalise.'},
+ {k:'kings pawn',name:"King's Pawn Opening",line:'1.e4 e5',w:'Knights before bishops, castle early, don\'t move the same piece twice.',b:'Fight for the centre and don\'t take the queen out early.'},
 ];
 const norm=s=>String(s).toLowerCase().replace(/['’]/g,'').replace(/[-_]/g,' ');
-function theoryFor(name){const n=norm(name);return THEORY.find(t=>n.includes(t.k))||null}
+const theoryFor=name=>{const n=norm(name);return THEORY.find(t=>n.includes(t.k))||null};
 function openingName(pgn){
-  const m=pgn.match(/\[ECOUrl "([^"]+)"\]/);
-  if(!m) return 'Unknown opening';
-  let seg=decodeURIComponent(m[1].split('/').pop()).split('-');
-  const out=[];for(const w of seg){if(/\d/.test(w)||w.includes('...'))break;out.push(w)}
-  const full=out.join(' ')||'Unknown opening';
-  const t=theoryFor(full);
-  return t?t.name:out.slice(0,3).join(' ');
+  const m=pgn.match(/\[ECOUrl "([^"]+)"\]/);if(!m)return 'Unknown opening';
+  const out=[];for(const w of decodeURIComponent(m[1].split('/').pop()).split('-')){if(/\d/.test(w)||w.includes('...'))break;out.push(w)}
+  const t=theoryFor(out.join(' '));return t?t.name:(out.slice(0,3).join(' ')||'Unknown opening');
 }
 
 /* ---------- state ---------- */
-const S={user:'',games:[],an:{},tab:'overview',rev:{url:null,i:0},pz:{list:[],i:0,sel:null,msg:'',done:store.get('cc_solved',{})}};
+const S={user:'',games:[],an:{},tab:'overview',rev:{url:null,i:0}};
 let queue=[],busy=false,stopFlag=false;
-
-function status(t,err){$('#status').innerHTML=err?`<span class="L">${esc(t)}</span>`:esc(t)}
+const status=(t,err)=>{$('#status').innerHTML=err?`<span class="L">${esc(t)}</span>`:esc(t)};
 
 /* ---------- chess.com sync ---------- */
 async function getJSON(u){const r=await fetch(u);if(r.status===404)throw new Error('notfound');if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
@@ -177,13 +191,13 @@ function parseGame(g,user){
   const color=g.white.username.toLowerCase()===user?'white':'black';
   const me=g[color],opp=g[color==='white'?'black':'white'];
   const res=me.result==='win'?'W':DRAWS.includes(me.result)?'D':'L';
-  return {url:g.url,pgn:g.pgn,end:g.end_time,tc:g.time_class,rated:g.rated,color,res,how:res==='L'?me.result:(res==='W'?opp.result:me.result),
+  return {url:g.url,pgn:g.pgn,end:g.end_time,tc:g.time_class,color,res,how:res==='L'?me.result:(res==='W'?opp.result:me.result),
     rating:me.rating,opp:opp.username,oppR:opp.rating,acc:g.accuracies?Math.round(g.accuracies[color]):null,opening:openingName(g.pgn||'')};
 }
 async function sync(auto){
   const user=$('#user').value.trim().toLowerCase();
   if(!user){status('Type a chess.com username first.',1);return}
-  if(user!==S.user){S.user=user;S.an=store.get('cc_an_'+user,{});S.games=store.get('cc_g_'+user,[]);renderAll()}
+  if(user!==S.user){S.user=user;S.an=store.get(AN+user,{});S.games=store.get('cc_g_'+user,[]);S.rev={url:null,i:0};renderAll()}
   store.set('cc_user',user);
   $('#syncBtn').disabled=true;status(auto?'Checking for new games…':'Loading games from chess.com…');
   try{
@@ -192,242 +206,373 @@ async function sync(auto){
     const months=archives.slice(-3);
     const lists=await Promise.all(months.map(u=>getJSON(u).then(d=>d.games||[]).catch(()=>[])));
     const games=lists.flat().filter(g=>g.rules==='chess'&&g.pgn).map(g=>parseGame(g,user)).sort((a,b)=>b.end-a.end).slice(0,150);
-    const before=new Set(S.games.map(g=>g.url));
-    const fresh=games.filter(g=>!before.has(g.url)).length;
+    const before=new Set(S.games.map(g=>g.url)),fresh=games.filter(g=>!before.has(g.url)).length;
     S.games=games;store.set('cc_g_'+user,games);store.set('cc_last',Date.now());
-    status(`${games.length} games loaded from the last ${months.length} months`+(fresh&&before.size?` (${fresh} new)`:'')+'.');
+    status(`${games.length} games from the last ${months.length} months`+(fresh&&before.size?` · ${fresh} new`:'')+'.');
     renderAll();
-    games.slice(0,3).forEach(g=>{if(!S.an[g.url])enqueue(g.url)});
-  }catch(e){
-    status(e.message==='notfound'?`No chess.com player called "${user}".`:'Could not reach chess.com. Check your connection and try again.',1);
-  }finally{$('#syncBtn').disabled=false}
+    games.slice(0,5).forEach(g=>{if(!S.an[g.url])enqueue(g.url)});
+  }catch(e){status(e.message==='notfound'?`No chess.com player called "${user}".`:'Could not reach chess.com. Check your connection and try again.',1)}
+  finally{$('#syncBtn').disabled=false}
 }
 
 /* ---------- engine ---------- */
 let engP=null,eng=null,engChain=Promise.resolve();
 function engine(){
   if(engP)return engP;
-  engP=new Promise((res,rej)=>{
-    eng=new Worker('engine/stockfish.js');eng.onerror=()=>rej(new Error('engine'));
-    eng.onmessage=e=>{if(String(e.data??e).includes('uciok'))res()};
-    eng.postMessage('uci');
-  });
-  engP.catch(()=>{engP=null});
-  return engP;
+  engP=new Promise((res,rej)=>{eng=new Worker('engine/stockfish.js');eng.onerror=()=>rej(new Error('engine'));eng.onmessage=e=>{if(String(e.data).includes('uciok'))res()};eng.postMessage('uci')});
+  engP.catch(()=>{engP=null});return engP;
 }
 function rawEval(fen,depth){
   return new Promise(res=>{
     let cp=0,mate=null;
-    eng.onmessage=e=>{
-      const l=String(e.data??e);
+    eng.onmessage=e=>{const l=String(e.data);
       if(l.startsWith('info')&&l.includes(' score ')){const m=l.match(/score (cp|mate) (-?\d+)/);if(m){if(m[1]==='cp'){cp=+m[2];mate=null}else mate=+m[2]}}
-      else if(l.startsWith('bestmove')){const b=l.split(' ')[1];res({cp:mate===null?cp:(mate>0?10000-mate:-10000-mate),best:b&&b!=='(none)'?b:null})}
-    };
+      else if(l.startsWith('bestmove')){const b=l.split(' ')[1];res({cp:mate===null?cp:(mate>0?10000-mate:-10000-mate),best:b&&b!=='(none)'?b:null})}};
     eng.postMessage('position fen '+fen);eng.postMessage('go depth '+depth);
   });
 }
 function evalFen(fen,depth){const p=engChain.then(()=>rawEval(fen,depth));engChain=p.catch(()=>{});return p}
 const winp=cp=>50+50*(2/(1+Math.exp(-0.00368208*Math.max(-1500,Math.min(1500,cp))))-1);
-function material(fen){let t=0;for(const c of fen.split(' ')[0])t+={q:9,r:5,b:3,n:3}[c.toLowerCase()]||0;return t}
-
+const moveAcc=loss=>Math.max(0,Math.min(100,103.1668*Math.exp(-0.04354*loss)-3.1669));
+const material=fen=>{let t=0;for(const c of fen.split(' ')[0])t+={q:9,r:5,b:3,n:3}[c.toLowerCase()]||0;return t};
 function movesFromPgn(pgn){
-  const body=pgn.replace(/\[[^\]]*\]/g,' ').replace(/\{[^}]*\}/g,' ');
-  let txt=body,prev;do{prev=txt;txt=txt.replace(/\([^()]*\)/g,' ')}while(txt!==prev);
+  let txt=pgn.replace(/\[[^\]]*\]/g,' ').replace(/\{[^}]*\}/g,' '),prev;
+  do{prev=txt;txt=txt.replace(/\([^()]*\)/g,' ')}while(txt!==prev);
   return txt.replace(/\$\d+/g,' ').replace(/\d+\.(\.\.)?/g,' ').split(/\s+/).filter(t=>t&&!/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
 }
+function classify(loss,isBest){return isBest?'best':loss<2?'excellent':loss<5?'good':loss<10?'inaccuracy':loss<20?'mistake':'blunder'}
 async function analyze(url,onProg){
   const g=S.games.find(x=>x.url===url);if(!g)return;
   await engine();
   const fenH=(g.pgn.match(/\[FEN "([^"]+)"\]/)||[])[1];
-  const c=fenH?new Chess(fenH):new Chess();
-  const fens=[c.fen()],moves=[];
+  const c=fenH?new Chess(fenH):new Chess(),fens=[c.fen()],moves=[];
   for(const san of movesFromPgn(g.pgn)){const m=c.move(san);if(!m)break;moves.push({san:m.san,u:m.from+m.to+(m.promotion||''),c:m.color});fens.push(c.fen())}
   const depth=+$('#depth').value,evals=[],best=[],t=new Chess();
   for(let i=0;i<fens.length;i++){
     if(stopFlag)return null;
-    t.load(fens[i]);
-    let cp,b=null;
+    t.load(fens[i]);let cp,b=null;
     if(t.in_checkmate())cp=-10000;else if(t.in_draw()||t.in_stalemate())cp=0;else{const r=await evalFen(fens[i],depth);cp=r.cp;b=r.best}
     evals.push(t.turn()==='w'?cp:-cp);best.push(b);onProg&&onProg(i+1,fens.length);
   }
   moves.forEach((m,i)=>{
-    const sgn=m.c==='w'?1:-1,before=winp(sgn*evals[i]),after=winp(sgn*evals[i+1]);
-    const loss=Math.max(0,before-after);
-    m.loss=Math.round(loss*10)/10;
-    m.cls=best[i]&&m.u===best[i]?'best':loss>=15?'blunder':loss>=10?'mistake':loss>=5?'inaccuracy':'ok';
-    const ply=i+1;m.phase=ply<=20?'opening':material(fens[i])<=26?'endgame':'middlegame';
+    const sg=m.c==='w'?1:-1,loss=Math.max(0,winp(sg*evals[i])-winp(sg*evals[i+1]));
+    m.loss=Math.round(loss*10)/10;m.cls=classify(loss,best[i]&&m.u===best[i]);
+    m.phase=i+1<=20?'opening':material(fens[i])<=26?'endgame':'middlegame';
   });
-  const a={fens,evals,best,moves,my:g.color[0]};
-  S.an[url]=a;
-  const keep=Object.keys(S.an).slice(-60),slim={};keep.forEach(k=>slim[k]=S.an[k]);S.an=slim;
-  store.set('cc_an_'+S.user,S.an);
-  return a;
+  S.an[url]={fens,evals,best,moves,my:g.color[0]};
+  const keep=Object.keys(S.an).slice(-60),slim={};keep.forEach(k=>slim[k]=S.an[k]);S.an=slim;store.set(AN+S.user,S.an);
 }
 function enqueue(url){if(!queue.includes(url)&&!S.an[url])queue.push(url);runQueue()}
 async function runQueue(){
   if(busy)return;busy=true;stopFlag=false;$('#qbox').hidden=false;
-  try{
-    while(queue.length&&!stopFlag){
-      const url=queue[0],g=S.games.find(x=>x.url===url);
-      $('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · ${queue.length} in queue`;
-      try{await analyze(url,(d,n)=>{$('#qbar').style.width=(d/n*100)+'%';$('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · move ${d} of ${n} · ${queue.length} game${queue.length>1?'s':''} in queue`})}catch(e){status('The engine could not load. Reload the page and try again.',1);break}
-      queue.shift();renderAll();
-    }
-  }finally{busy=false;queue=stopFlag?[]:queue;$('#qbox').hidden=true;renderAll()}
+  try{while(queue.length&&!stopFlag){
+    const url=queue[0],g=S.games.find(x=>x.url===url);
+    try{await analyze(url,(d,n)=>{$('#qbar').style.width=(d/n*100)+'%';$('#qtxt').textContent=`Analysing vs ${g?g.opp:''} · move ${d} of ${n} · ${queue.length} game${queue.length>1?'s':''} in queue`})}
+    catch(e){status('The engine could not load. Reload the page and try again.',1);break}
+    queue.shift();if(S.tab!=='review'&&S.tab!=='puzzles')renderAll();
+  }}finally{busy=false;if(stopFlag)queue=[];$('#qbox').hidden=true;if(S.tab!=='puzzles')renderAll()}
 }
 
-/* ---------- board ---------- */
-function boardHTML(fen,{flip=false,hl=[],best=[],sel=null,click=false}={}){
-  const rows=fen.split(' ')[0].split('/'),cells={};
-  rows.forEach((r,ri)=>{let f=0;for(const ch of r){if(/\d/.test(ch))f+=+ch;else{cells[FILES[f]+(8-ri)]=ch;f++}}});
-  let h='';
-  for(let r=0;r<8;r++)for(let f=0;f<8;f++){
-    const file=flip?7-f:f,rank=flip?r+1:8-r,sq=FILES[file]+rank,p=cells[sq];
-    const light=(file+rank)%2===0;
-    const cls=['sq',light?'l':'d',hl.includes(sq)?'hl':'',best.includes(sq)?'best':'',sel===sq?'sel':'',click?'click':''].join(' ');
-    const piece=p?`<span class="${p===p.toUpperCase()?'pw':'pb'}">${GLYPH[p.toLowerCase()]}︎</span>`:'';
-    const co=(r===7?`<span class="coord f">${FILES[file]}</span>`:'')+(f===0?`<span class="coord r">${rank}</span>`:'');
-    h+=`<button class="${cls}" data-sq="${sq}" ${click?'':'tabindex="-1"'} aria-label="${sq}${p?' '+p:''}">${piece}${co}</button>`;
-  }
-  return `<div class="board">${h}</div>`;
+/* ---------- chess helpers ---------- */
+const VAL={p:1,n:3,b:3,r:5,q:9,k:100},PN={p:'pawn',n:'knight',b:'bishop',r:'rook',q:'queen',k:'king'};
+const isW=ch=>ch===ch.toUpperCase();
+function pmap(fen){const m={};fen.split(' ')[0].split('/').forEach((r,ri)=>{let f=0;for(const ch of r){if(/\d/.test(ch))f+=+ch;else{m['abcdefgh'[f]+(8-ri)]=ch;f++}}});return m}
+function attacks(m,sq){
+  const ch=m[sq];if(!ch)return[];const t=ch.toLowerCase(),f=sq.charCodeAt(0)-97,r=+sq[1]-1,out=[];
+  const on=(x,y)=>x>=0&&x<8&&y>=0&&y<8,s=(x,y)=>String.fromCharCode(97+x)+(y+1);
+  const step=d=>d.forEach(([dx,dy])=>{if(on(f+dx,r+dy))out.push(s(f+dx,r+dy))});
+  const slide=d=>d.forEach(([dx,dy])=>{let x=f+dx,y=r+dy;while(on(x,y)){out.push(s(x,y));if(m[s(x,y)])break;x+=dx;y+=dy}});
+  const D=[[1,1],[1,-1],[-1,1],[-1,-1]],O=[[1,0],[-1,0],[0,1],[0,-1]];
+  if(t==='n')step([[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]]);
+  if(t==='k')step([...D,...O]);if(t==='b')slide(D);if(t==='r')slide(O);if(t==='q')slide([...D,...O]);
+  if(t==='p')step([[1,isW(ch)?1:-1],[-1,isW(ch)?1:-1]]);
+  return out;
 }
-function uciToSan(fen,u){if(!u)return '';const c=new Chess(fen);const m=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});return m?m.san:u}
+const defended=(m,sq,byWhite)=>Object.keys(m).some(s=>s!==sq&&isW(m[s])===byWhite&&attacks(m,s).includes(sq));
+function play(fen,u){const c=new Chess(fen);const mv=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});return mv?{c,mv}:null}
+const uciToSan=(fen,u)=>{if(!u)return '';const p=play(fen,u);return p?p.mv.san:u};
+function forkTargets(fen,u){
+  const p=play(fen,u);if(!p)return[];const pm=pmap(p.c.fen()),me=p.mv.color==='w',v=VAL[p.mv.piece];
+  return attacks(pm,p.mv.to).filter(s=>{const x=pm[s];if(!x||isW(x)===me)return false;const t=x.toLowerCase();return t==='k'||(VAL[t]>=3&&(VAL[t]>v||!defended(pm,s,!me)))});
+}
+/* what went wrong on move i, in plain words, plus a training theme */
+function insight(a,i){
+  const m=a.moves[i],sg=m.c==='w'?1:-1,before=sg*a.evals[i],after=sg*a.evals[i+1],best=a.best[i],reply=a.best[i+1];
+  const bestSan=uciToSan(a.fens[i],best),replySan=uciToSan(a.fens[i+1],reply);
+  const tail=best&&best!==m.u?` Better was <b>${esc(bestSan)}</b>.`:'';
+  if(before>=9000&&after<9000)return{theme:'mate',text:`You had a forced mate starting with <b>${esc(bestSan)}</b>.`};
+  if(after<=-9000&&before>-9000)return{theme:'defensiveMove',text:`This walks into a forced mate: <b>${esc(replySan)}</b>.${tail}`};
+  if(best&&best!==m.u){
+    const ft=forkTargets(a.fens[i],best);
+    if(ft.length>=2){const pm=pmap(play(a.fens[i],best).c.fen());return{theme:'fork',text:`You missed a fork: <b>${esc(bestSan)}</b> hits the ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')}.`}}
+    const p=play(a.fens[i],best);
+    if(p&&p.mv.captured&&VAL[p.mv.captured]>=3){
+      const free=!defended(pmap(a.fens[i]),p.mv.to,m.c!=='w');
+      if(free||VAL[p.mv.captured]>VAL[p.mv.piece])return{theme:'hangingPiece',text:`<b>${esc(bestSan)}</b> wins the ${PN[p.mv.captured]} on ${p.mv.to}${free?' for free':''}.`};
+    }
+  }
+  if(reply){
+    const ft=forkTargets(a.fens[i+1],reply);
+    if(ft.length>=2){const pm=pmap(play(a.fens[i+1],reply).c.fen());return{theme:'fork',text:`This allows a fork: <b>${esc(replySan)}</b> hits your ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')}.${tail}`}}
+    const p=play(a.fens[i+1],reply);
+    if(p&&p.mv.captured&&VAL[p.mv.captured]>=3)return{theme:'hangingPiece',text:`This leaves your ${PN[p.mv.captured]} on ${p.mv.to} loose: <b>${esc(replySan)}</b> takes it.${tail}`};
+  }
+  const th=m.phase==='opening'?'opening':m.phase==='endgame'?'endgame':'middlegame';
+  return{theme:th,text:`Your move lost ${m.loss}% winning chance.${tail}`};
+}
+const THEMES={mate:'Missed mates',defensiveMove:'Walking into mate',fork:'Forks',hangingPiece:'Loose pieces',opening:'Opening',middlegame:'Middlegame',endgame:'Endgame'};
+const CLS=[['best','Best','★'],['excellent','Excellent','!'],['good','Good','✓'],['inaccuracy','Inaccuracy','?!'],['mistake','Mistake','?'],['blunder','Blunder','??']];
+const SYM=Object.fromEntries(CLS.map(c=>[c[0],c[2]]));
+const isErr=m=>m.cls==='mistake'||m.cls==='blunder';
+
+function myErrors(){
+  const out=[];
+  for(const g of S.games){const a=S.an[g.url];if(!a)continue;
+    a.moves.forEach((m,i)=>{if(m.c===a.my&&isErr(m)&&a.best[i]){const ins=insight(a,i);out.push({url:g.url,i,fen:a.fens[i],best:a.best[i],m,opp:g.opp,...ins})}})}
+  return out;
+}
+function weakness(){const e=myErrors(),c={};e.forEach(x=>c[x.theme]=(c[x.theme]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])}
+
+/* ---------- small chart helpers ---------- */
+function graphSVG(svg,a,cur,onPick){
+  const W=svg.clientWidth,H=svg.clientHeight,n=a.evals.length;if(!W||n<2)return;
+  const X=i=>i/(n-1)*W,Y=i=>H*(1-winp(a.evals[i])/100);
+  let d=`M0,${H} `;for(let i=0;i<n;i++)d+=`L${X(i).toFixed(1)},${Y(i).toFixed(1)} `;d+=`L${W},${H} Z`;
+  let dots='';a.moves.forEach((m,i)=>{if(m.c===a.my&&(isErr(m)||m.cls==='inaccuracy')){const col=m.cls==='blunder'?'#e4002b':m.cls==='mistake'?'#ef8a00':'#d4ad00';dots+=`<circle cx="${X(i+1)}" cy="${Y(i+1)}" r="${m.cls==='inaccuracy'?3.5:5}" fill="${col}" stroke="#fff" stroke-width="1.5"/>`}});
+  svg.innerHTML=`<path d="${d}" fill="#f2f2ee"/><line x1="0" x2="${W}" y1="${H/2}" y2="${H/2}" stroke="#888" stroke-dasharray="3 4" stroke-width="1"/><line x1="${X(cur)}" x2="${X(cur)}" y1="0" y2="${H}" stroke="#2f6fd1" stroke-width="2"/>${dots}`;
+  svg.onclick=e=>{const r=svg.getBoundingClientRect();onPick(Math.round((e.clientX-r.left)/r.width*(n-1)))};
+}
+function ratingSVG(svg,list){
+  const W=svg.clientWidth,H=svg.clientHeight;if(!W||list.length<2){svg.innerHTML='';return}
+  const pts=list.slice().sort((a,b)=>a.end-b.end).map(g=>g.rating),lo=Math.min(...pts),hi=Math.max(...pts),pad=Math.max(10,(hi-lo)*.15);
+  const L=44,R=10,T=12,B=22,x=i=>L+i/(pts.length-1)*(W-L-R),y=v=>T+(1-(v-(lo-pad))/((hi+pad)-(lo-pad)))*(H-T-B);
+  const d=pts.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const ticks=[lo,Math.round((lo+hi)/2),hi].map(v=>`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="currentColor" opacity=".6">${v}</text>`).join('');
+  svg.innerHTML=`${ticks}<path d="${d} L${x(pts.length-1)},${H-B} L${L},${H-B} Z" fill="#e4002b" opacity=".08"/><path d="${d}" fill="none" stroke="#e4002b" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${x(pts.length-1)}" cy="${y(pts[pts.length-1])}" r="4.5" fill="#e4002b"/><text x="${L}" y="${H-5}" font-size="11" fill="currentColor" opacity=".6">${pts.length} games ago</text><text x="${W-R}" y="${H-5}" font-size="11" fill="currentColor" opacity=".6" text-anchor="end">now</text>`;
+}
+function hbars(rows,max,btn){return rows.map(([k,v])=>`<div class="hbar"><span>${esc(THEMES[k]||k)}</span><div class="t"><i style="width:${Math.max(6,v/max*100)}%"></i></div><span>${v}${btn?` <button class="ghost sm" data-train="${k}">Train</button>`:''}</span></div>`).join('')}
 
 /* ---------- views ---------- */
 const pct=(a,b)=>b?Math.round(a/b*100):0;
 function score(list){const w=list.filter(g=>g.res==='W').length,d=list.filter(g=>g.res==='D').length;return{n:list.length,w,d,l:list.length-w-d,s:list.length?Math.round((w+d/2)/list.length*100):0}}
-function myMoves(){const out=[];for(const g of S.games){const a=S.an[g.url];if(!a)continue;a.moves.forEach((m,i)=>{if(m.c===a.my)out.push({...m,url:g.url,ply:i})})}return out}
-
+function myMoves(){const out=[];for(const g of S.games){const a=S.an[g.url];if(!a)continue;a.moves.forEach(m=>{if(m.c===a.my)out.push(m)})}return out}
+function mainTc(){const c={};S.games.forEach(g=>c[g.tc]=(c[g.tc]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]}
 function tips(){
-  const T=[],G=S.games;if(!G.length)return T;
-  const an=G.filter(g=>S.an[g.url]),mm=myMoves();
-  if(an.length){
-    const bl=mm.filter(m=>m.cls==='blunder').length/an.length;
-    if(bl>=1)T.push(['Tactics first',`You make about ${bl.toFixed(1)} blunders per game. Before every move, check what your opponent's last move attacks, and look at all checks and captures. Do the puzzles tab daily.`]);
-    const ph={opening:0,middlegame:0,endgame:0};mm.filter(m=>m.cls==='blunder'||m.cls==='mistake').forEach(m=>ph[m.phase]++);
-    const tot=ph.opening+ph.middlegame+ph.endgame;
-    if(tot){const worst=Object.entries(ph).sort((a,b)=>b[1]-a[1])[0];
-      const adv={opening:'Learn the first 6–8 moves and the ideas of your main openings (see Openings tab).',middlegame:'Slow down in the middlegame: find a plan, check which pieces are undefended, and don\'t rush captures.',endgame:'Study basic endgames: king activity, king + pawn vs king, and rook endgames (Lucena/Philidor).'};
-      T.push([`Most mistakes in the ${worst[0]}`,`${pct(worst[1],tot)}% of your mistakes and blunders happen there. ${adv[worst[0]]}`]);}
-  }
+  const T=[],G=S.games,an=G.filter(g=>S.an[g.url]),mm=myMoves(),wk=weakness();
+  if(wk.length){const [k,v]=wk[0],adv={mate:'Look for checks first in every sharp position. Do mate puzzles daily.',defensiveMove:'Before each move ask: what does my opponent threaten against my king?',fork:'Check every knight and queen move for double attacks, yours and theirs.',hangingPiece:'Before you move, count attackers and defenders of every piece. Blunder check: what is undefended?',opening:'Learn the ideas of your main openings (Openings tab) instead of moves by heart.',middlegame:'Slow down in the middlegame: make a plan, check loose pieces, avoid rushed captures.',endgame:'Practise basic endgames: king activity, king + pawn vs king, rook endgames.'};
+    T.push([`Biggest weakness: ${THEMES[k]}`,`${v} of your mistakes are of this type. ${adv[k]} The Puzzles tab trains it.`])}
+  if(an.length){const bl=mm.filter(m=>m.cls==='blunder').length/an.length;if(bl>=0.8)T.push(['Blunder check',`About ${bl.toFixed(1)} blunders per game. Before every move: checks, captures, threats.`])}
   const losses=G.filter(g=>g.res==='L'),tout=losses.filter(g=>g.how==='timeout').length;
-  if(losses.length>=5&&tout/losses.length>=.25)T.push(['Watch the clock',`${pct(tout,losses.length)}% of your losses are on time. Play a slightly longer time control or spend less time early in the game.`]);
+  if(losses.length>=5&&tout/losses.length>=.25)T.push(['Watch the clock',`${pct(tout,losses.length)}% of your losses are on time. Spend less time early in the game.`]);
   const wS=score(G.filter(g=>g.color==='white')),bS=score(G.filter(g=>g.color==='black'));
-  if(wS.n>=5&&bS.n>=5&&Math.abs(wS.s-bS.s)>=12){const weak=wS.s<bS.s?'White':'Black';T.push([`Weaker with ${weak}`,`You score ${weak==='White'?wS.s:bS.s}% with ${weak} vs ${weak==='White'?bS.s:wS.s}% with the other colour. Your ${weak} repertoire needs work.`])}
+  if(wS.n>=5&&bS.n>=5&&Math.abs(wS.s-bS.s)>=12){const weak=wS.s<bS.s?'White':'Black';T.push([`Weaker with ${weak}`,`${weak==='White'?wS.s:bS.s}% score with ${weak} vs ${weak==='White'?bS.s:wS.s}% with the other colour.`])}
   const op=openingStats().filter(o=>o.n>=3).sort((a,b)=>a.s-b.s)[0];
-  if(op&&op.s<45)T.push([`Fix the ${op.name} as ${op.color}`,`${op.n} games, only ${op.s}% score. Open the Openings tab for the key ideas.`]);
-  const accs=G.filter(g=>g.acc!=null).map(g=>g.acc);
-  if(accs.length>=3)T.push(['Accuracy',`Average chess.com accuracy in reviewed games: ${Math.round(accs.reduce((a,b)=>a+b,0)/accs.length)}%.`]);
-  if(!an.length)T.push(['Analyse a few games','The more games you analyse, the more precise these tips get. Start with your newest losses.']);
+  if(op&&op.s<45)T.push([`Fix the ${op.name} as ${op.color}`,`${op.n} games, only ${op.s}% score. See the Openings tab.`]);
+  if(!an.length)T.push(['Analyse a few games','The more games you analyse, the more precise this gets.']);
   return T;
 }
 function renderOverview(){
   const el=$('#overview');
-  if(!S.games.length){el.innerHTML=`<div class="empty" style="margin-top:24px">Type a chess.com username above and press <b>Sync games</b>.</div>`;return}
-  const G=S.games,all=score(G),byTc={};G.forEach(g=>{(byTc[g.tc]=byTc[g.tc]||[]).push(g)});
-  const ratings=Object.entries(byTc).map(([tc,l])=>`<div class="card"><div class="mute small">${esc(tc)} rating</div><div class="big">${l[0].rating}</div><div class="small mute">${score(l).s}% score in ${l.length} games</div></div>`).join('');
-  const an=G.filter(g=>S.an[g.url]).length,mm=myMoves();
-  const cnt=k=>mm.filter(m=>m.cls===k).length;
-  const ph=['opening','middlegame','endgame'].map(p=>{const e=mm.filter(m=>m.phase===p&&(m.cls==='blunder'||m.cls==='mistake')).length,t=mm.filter(m=>m.phase===p).length;return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between"><span>${p[0].toUpperCase()+p.slice(1)}</span><span class="mute">${e} errors / ${t} moves</span></div><div class="bar"><i style="width:${t?Math.min(100,e/t*400):0}%;background:var(--red)"></i></div></div>`}).join('');
+  if(!S.games.length){el.innerHTML=`<div class="empty">Type a chess.com username above and press <b>Sync games</b>.</div>`;return}
+  const G=S.games,tc=mainTc(),tl=G.filter(g=>g.tc===tc),all=score(G),wk=weakness(),mm=myMoves(),an=G.filter(g=>S.an[g.url]).length;
+  const accs=an?Math.round(mm.reduce((s,m)=>s+moveAcc(m.loss),0)/mm.length):null;
+  const wdl=(l,lab)=>{const s=score(l);return s.n?`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between"><span>${lab}</span><span class="mute small">${s.w}–${s.d}–${s.l}</span></div><div style="display:flex;height:12px;border-radius:6px;overflow:hidden;margin-top:4px"><i style="width:${pct(s.w,s.n)}%;background:var(--good)"></i><i style="width:${pct(s.d,s.n)}%;background:var(--mute);opacity:.5"></i><i style="width:${pct(s.l,s.n)}%;background:var(--red)"></i></div></div>`:''};
   el.innerHTML=`
   <h2>What to work on</h2>
   <ol class="tips">${tips().map(([h,t])=>`<li><b>${esc(h)}</b>${esc(t)}</li>`).join('')}</ol>
-  <div class="grid">${ratings}
-    <div class="card"><div class="mute small">Results, last ${all.n} games</div><div class="big">${all.w}–${all.d}–${all.l}</div><div class="small mute">win / draw / loss</div></div>
+  <div class="grid">
+    <div class="card" style="grid-column:span 2;min-width:min(100%,520px)"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>${esc(tc)} rating</h3><span class="big">${tl[0]?.rating??''}</span></div><div class="fig" style="height:180px"><svg id="rateSvg"></svg></div></div>
+    <div class="card"><h3>Results</h3>${wdl(G,'All '+all.n+' games')}${wdl(G.filter(g=>g.color==='white'),'With White')}${wdl(G.filter(g=>g.color==='black'),'With Black')}</div>
+    <div class="card"><h3>Your accuracy</h3><div class="big">${accs!=null?accs+'%':'–'}</div><p class="small mute">${an?`Average over ${an} analysed game${an>1?'s':''}.`:'Analyse games to see it.'}</p></div>
   </div>
-  <h2>Mistakes by phase</h2>
-  ${an?`<div class="grid"><div class="card">${ph}</div><div class="card">
-    <p><span class="tag blunder">Blunders</span> ${cnt('blunder')}</p><p><span class="tag mistake">Mistakes</span> ${cnt('mistake')}</p><p><span class="tag inaccuracy">Inaccuracies</span> ${cnt('inaccuracy')}</p>
-    <p class="small mute">From ${an} analysed game${an>1?'s':''}.</p></div></div>`:'<p class="mute">No games analysed yet.</p>'}
-  <div class="navbtns"><button id="anLosses">Analyse my last 5 losses</button><button class="ghost" id="an10">Analyse last 10 games</button></div>`;
+  <h2>Your mistake types</h2>
+  ${wk.length?`<div class="card">${hbars(wk,wk[0][1],true)}</div>`:'<p class="mute">Analyse a few games to see what kind of mistakes you make.</p>'}
+  <div class="navbtns" style="margin-top:14px"><button id="anLosses">Analyse my last 5 losses</button><button class="ghost" id="an10">Analyse last 10 games</button></div>`;
+  const rs=$('#rateSvg');ratingSVG(rs,tl);new ResizeObserver(()=>ratingSVG(rs,tl)).observe(rs);
   $('#anLosses').onclick=()=>G.filter(g=>g.res==='L').slice(0,5).forEach(g=>enqueue(g.url));
   $('#an10').onclick=()=>G.slice(0,10).forEach(g=>enqueue(g.url));
+  el.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>{PZ.theme=b.dataset.train;PZ.mode='themed';PZ.cur=null;setTab('puzzles')});
 }
 function renderGames(){
   const el=$('#games');
-  if(!S.games.length){el.innerHTML='<div class="empty" style="margin-top:24px">No games loaded yet.</div>';return}
-  el.innerHTML=`<h2>Recent games</h2><div class="scroll"><table class="stack"><thead><tr><th>Date</th><th>Opponent</th><th>Colour</th><th>Result</th><th>Opening</th><th class="n">Accuracy</th><th></th></tr></thead><tbody>
+  if(!S.games.length){el.innerHTML='<div class="empty">No games loaded yet.</div>';return}
+  el.innerHTML=`<h2>Recent games</h2><div class="scroll"><table class="stack"><thead><tr><th>Date</th><th>Opponent</th><th>Colour</th><th>Result</th><th>Opening</th><th class="n">Errors</th><th></th></tr></thead><tbody>
   ${S.games.map(g=>{const a=S.an[g.url],q=queue.includes(g.url);
-    const b=a?`<span class="tag blunder">${a.moves.filter(m=>m.c===a.my&&m.cls==='blunder').length}</span>`:'';
-    return `<tr><td>${new Date(g.end*1000).toLocaleDateString()}</td><td>${esc(g.opp)} <span class="mute">(${g.oppR})</span></td><td>${g.color}</td><td class="${g.res}">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'} <span class="small mute">${esc(g.how)}</span></td><td>${esc(g.opening)}</td><td class="n">${g.acc!=null?g.acc+'%':''}</td>
-    <td>${a?`<button class="ghost" data-rev="${esc(g.url)}">Review ${b}</button>`:`<button class="ghost" data-an="${esc(g.url)}" ${q?'disabled':''}>${q?'Queued':'Analyse'}</button>`}</td></tr>`}).join('')}
+    const er=a?a.moves.filter(m=>m.c===a.my):null;
+    const errs=er?`<span class="sym s-blunder">${er.filter(m=>m.cls==='blunder').length}</span> <span class="sym s-mistake">${er.filter(m=>m.cls==='mistake').length}</span>`:'';
+    return `<tr><td>${new Date(g.end*1000).toLocaleDateString()}</td><td>${esc(g.opp)} <span class="mute">(${g.oppR})</span></td><td>${g.color}</td><td class="${g.res}">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'} <span class="small mute">${esc(g.how)}</span></td><td>${esc(g.opening)}</td><td class="n">${errs}</td>
+    <td>${a?`<button class="ghost sm" data-rev="${esc(g.url)}">Review</button>`:`<button class="ghost sm" data-an="${esc(g.url)}" ${q?'disabled':''}>${q?'Queued':'Analyse'}</button>`}</td></tr>`}).join('')}
   </tbody></table></div>`;
   el.querySelectorAll('[data-an]').forEach(b=>b.onclick=()=>{enqueue(b.dataset.an);renderGames()});
   el.querySelectorAll('[data-rev]').forEach(b=>b.onclick=()=>{S.rev={url:b.dataset.rev,i:0};setTab('review')});
 }
+
+/* ---------- review ---------- */
+const RV={cg:null,a:null,g:null,ins:{}};
 function renderReview(){
   const el=$('#review');
   const url=S.rev.url&&S.an[S.rev.url]?S.rev.url:S.games.find(g=>S.an[g.url])?.url;
-  if(!url){el.innerHTML='<div class="empty" style="margin-top:24px">Analyse a game in the Games tab, then review it here.</div>';return}
-  S.rev.url=url;
-  const a=S.an[url],g=S.games.find(x=>x.url===url)||{},i=Math.max(0,Math.min(S.rev.i,a.fens.length-1));S.rev.i=i;
-  const m=i>0?a.moves[i-1]:null,flip=a.my==='b';
-  const hl=m?[m.u.slice(0,2),m.u.slice(2,4)]:[];
-  const bestU=m&&m.cls!=='best'&&m.cls!=='ok'?a.best[i-1]:null;
-  const wp=winp(a.evals[i]);const ev=a.evals[i];
-  const evTxt=Math.abs(ev)>=9000?`Mate`:`${ev>0?'+':''}${(ev/100).toFixed(1)}`;
-  let info='<p class="mute">Start position. Use the arrows or tap a move.</p>';
-  if(m){
-    const who=m.c===a.my?'You':esc(g.opp);
-    info=`<p><b>${Math.ceil(i/2)}${m.c==='w'?'.':'...'} ${esc(m.san)}</b> ${m.cls==='best'?'<span class="tag good">Best move</span>':m.cls!=='ok'?`<span class="tag ${m.cls}">${m.cls}</span>`:''}</p>`+
-      (bestU?`<p>${who} played ${esc(m.san)}. Better was <b>${esc(uciToSan(a.fens[i-1],bestU))}</b> (green squares). Win chance dropped by ${m.loss}%.</p>`:'')+
-      `<p class="small mute">Eval ${evTxt} · ${m.phase}</p>`;
-  }
-  const ml=[];for(let k=0;k<a.moves.length;k+=2){ml.push(`<span class="mute">${k/2+1}.</span>`);for(const j of [k,k+1]){const mv=a.moves[j];ml.push(mv?`<button class="mv ${mv.c===a.my?mv.cls:''} ${j+1===i?'on':''}" data-i="${j+1}">${esc(mv.san)}</button>`:'<span></span>')}}
+  if(!url){el.innerHTML='<div class="empty">Analyse a game in the Games tab, then review it here.</div>';RV.cg=null;return}
+  S.rev.url=url;const a=S.an[url],g=S.games.find(x=>x.url===url)||{};RV.a=a;RV.g=g;RV.ins={};
+  a.moves.forEach((m,i)=>{if(m.c===a.my&&(isErr(m)||m.cls==='inaccuracy'))RV.ins[i]=insight(a,i)});
+  const side=c=>a.moves.filter(m=>m.c===c),me=a.my,op=me==='w'?'b':'w';
+  const acc=c=>{const l=side(c);return l.length?Math.round(l.reduce((s,m)=>s+moveAcc(m.loss),0)/l.length):0};
+  const cnt=(c,k)=>side(c).filter(m=>m.cls===k).length;
   const games=S.games.filter(x=>S.an[x.url]);
-  el.innerHTML=`<h2>Review vs ${esc(g.opp)} <span class="${g.res}">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'}</span></h2>
-  <p><select id="revSel" aria-label="Pick a game">${games.map(x=>`<option value="${esc(x.url)}" ${x.url===url?'selected':''}>${new Date(x.end*1000).toLocaleDateString()} · vs ${esc(x.opp)} · ${x.res}</option>`).join('')}</select></p>
-  <div class="review"><div>
-    <div class="boardwrap"><div class="evalbar" title="White's winning chance"><i style="height:${flip?100-wp:wp}%;${flip?'background:#151515':''}"></i></div>${boardHTML(a.fens[i],{flip,hl,best:bestU?[bestU.slice(0,2),bestU.slice(2,4)]:[]})}</div>
-    <div class="navbtns"><button class="ghost" data-go="0" aria-label="First">|&lt;</button><button class="ghost" data-go="-1" aria-label="Back">&lt;</button><button class="ghost" data-go="1" aria-label="Next">&gt;</button><button class="ghost" data-go="999" aria-label="Last">&gt;|</button><button class="ghost" id="nextErr">Next mistake</button></div>
-  </div><div>${info}<div class="moves">${ml.join('')}</div><p class="small mute" style="margin-top:10px"><a href="${esc(url)}" target="_blank" rel="noopener">Open on chess.com</a></p></div></div>`;
-  if(flip){const bar=el.querySelector('.evalbar');bar.style.background='#f4f4f0'}
-  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const d=+b.dataset.go;S.rev.i=d===0?0:d===999?a.fens.length-1:S.rev.i+d;renderReview()});
-  el.querySelectorAll('.mv').forEach(b=>b.onclick=()=>{S.rev.i=+b.dataset.i;renderReview()});
+  const keys=a.moves.map((m,i)=>[m,i]).filter(([m])=>m.c===me&&isErr(m));
+  el.innerHTML=`
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:20px 0 14px">
+    <select id="revSel" aria-label="Pick a game" style="max-width:100%">${games.map(x=>`<option value="${esc(x.url)}" ${x.url===url?'selected':''}>${new Date(x.end*1000).toLocaleDateString()} · vs ${esc(x.opp)} · ${x.res==='W'?'Win':x.res==='L'?'Loss':'Draw'}</option>`).join('')}</select>
+    <a class="small" href="${esc(url)}" target="_blank" rel="noopener">Open on chess.com</a>
+  </div>
+  <div class="rv">
+    <div>
+      <div class="boardrow"><div class="evalbar" id="rvBar"><i></i><b></b></div><div class="cgb" id="rvBoard"></div></div>
+      <div class="navbtns"><button class="ghost" data-go="first" aria-label="First move">|◀</button><button class="ghost" data-go="prev" aria-label="Previous move">◀</button><button class="ghost" data-go="next" aria-label="Next move">▶</button><button class="ghost" data-go="last" aria-label="Last move">▶|</button><button id="nextErr">Next mistake</button></div>
+      <div class="graph" title="Winning chances. White area = White is better."><svg id="rvGraph"></svg></div>
+      <p class="small mute" style="margin-top:6px">Tap the curve to jump. Dots are your errors.</p>
+    </div>
+    <div>
+      <div class="players">
+        <div class="p"><div class="small mute">You · ${me==='w'?'White':'Black'}</div><div class="acc">${acc(me)}%</div><div class="small mute">accuracy</div></div>
+        <div class="${g.res}" style="font-weight:800;font-size:18px">${g.res==='W'?'Win':g.res==='L'?'Loss':'Draw'}</div>
+        <div class="p" style="text-align:right"><div class="small mute">${esc(g.opp)} (${g.oppR})</div><div class="acc">${acc(op)}%</div><div class="small mute">accuracy</div></div>
+      </div>
+      <p class="small mute" style="margin:8px 0 14px">${esc(g.opening)} · ${esc(g.tc)}</p>
+      <div class="now" id="rvNow"></div>
+      <h3>Key moments <span class="mute small">· ${keys.length} mistake${keys.length===1?'':'s'}</span></h3>
+      <div class="keys" id="rvKeys">${keys.length?keys.map(([m,i])=>`<button class="key" data-i="${i+1}"><span class="sym s-${m.cls}">${SYM[m.cls]}</span><span><b>${Math.floor(i/2)+1}${m.c==='w'?'.':'…'} ${esc(m.san)}</b> <span class="mute small">−${m.loss}%</span><br><span class="small">${RV.ins[i].text}</span></span></button>`).join(''):'<p class="mute">No mistakes or blunders in this game. Nice.</p>'}</div>
+      <h3 style="margin-top:18px">Move quality</h3>
+      <table class="ctab"><thead><tr><th></th><th class="n">You</th><th class="n">${esc(g.opp)}</th></tr></thead><tbody>
+      ${CLS.map(([k,l,s])=>`<tr><td><span class="sym s-${k}">${s}</span> ${l}</td><td class="n">${cnt(me,k)}</td><td class="n">${cnt(op,k)}</td></tr>`).join('')}</tbody></table>
+      <h3 style="margin-top:18px">All moves</h3>
+      <div class="mlist" id="rvList">${(()=>{const o=[];for(let k=0;k<a.moves.length;k+=2){o.push(`<span class="mute">${k/2+1}.</span>`);for(const j of [k,k+1]){const mv=a.moves[j];o.push(mv?`<button class="mvb" data-i="${j+1}">${esc(mv.san)}${['inaccuracy','mistake','blunder'].includes(mv.cls)?`<span class="q q-${mv.cls}">${SYM[mv.cls]}</span>`:''}</button>`:'<span></span>')}}return o.join('')})()}</div>
+    </div>
+  </div>`;
+  RV.cg=Chessground($('#rvBoard'),{viewOnly:true,coordinates:true,orientation:me==='w'?'white':'black',animation:{enabled:true,duration:160},drawable:{enabled:false,visible:true}});
+  const go=i=>{S.rev.i=i;rvUpdate()};
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{const k=b.dataset.go;go(k==='first'?0:k==='last'?a.fens.length-1:S.rev.i+(k==='next'?1:-1))});
+  el.querySelectorAll('.mvb,.key').forEach(b=>b.onclick=()=>go(+b.dataset.i));
   $('#revSel').onchange=e=>{S.rev={url:e.target.value,i:0};renderReview()};
-  $('#nextErr').onclick=()=>{const j=a.moves.findIndex((mv,k)=>k+1>S.rev.i&&mv.c===a.my&&(mv.cls==='blunder'||mv.cls==='mistake'));if(j>=0){S.rev.i=j+1;renderReview()}};
+  $('#nextErr').onclick=()=>{const j=keys.find(([m,i])=>i+1>S.rev.i);go(j?j[1]+1:(keys[0]?keys[0][1]+1:S.rev.i))};
+  const gs=$('#rvGraph');new ResizeObserver(()=>graphSVG(gs,a,S.rev.i,go)).observe(gs);
+  rvUpdate();
 }
-function buildPuzzles(){
-  const L=[];
-  for(const g of S.games){const a=S.an[g.url];if(!a)continue;
-    a.moves.forEach((m,i)=>{if(m.c===a.my&&(m.cls==='blunder'||m.cls==='mistake')&&a.best[i])L.push({id:g.url+'#'+i,fen:a.fens[i],best:a.best[i],played:m.san,loss:m.loss,opp:g.opp,phase:m.phase})});}
-  return L.sort((x,y)=>y.loss-x.loss);
+function rvUpdate(){
+  const a=RV.a;if(!a||!RV.cg)return;
+  const i=S.rev.i=Math.max(0,Math.min(S.rev.i,a.fens.length-1)),m=i>0?a.moves[i-1]:null,fen=a.fens[i];
+  const c=new Chess(fen),shapes=[];
+  if(m){const err=['inaccuracy','mistake','blunder'].includes(m.cls);
+    shapes.push({orig:m.u.slice(0,2),dest:m.u.slice(2,4),brush:m.cls==='blunder'||m.cls==='mistake'?'red':m.cls==='inaccuracy'?'yellow':'blue'});
+    const b=a.best[i-1];if(err&&b&&b!==m.u)shapes.push({orig:b.slice(0,2),dest:b.slice(2,4),brush:'green'});}
+  RV.cg.set({fen,turnColor:c.turn()==='w'?'white':'black',lastMove:m?[m.u.slice(0,2),m.u.slice(2,4)]:undefined,check:c.in_check()});
+  RV.cg.setAutoShapes(shapes);
+  const ev=a.evals[i],wp=winp(ev),flip=a.my==='b',bar=$('#rvBar');
+  bar.style.background=flip?'#f2f2ee':'#1c1c1c';const fill=bar.querySelector('i');fill.style.background=flip?'#1c1c1c':'#f2f2ee';fill.style.height=(flip?100-wp:wp)+'%';
+  const lab=Math.abs(ev)>=9000?'M':(Math.abs(ev)/100).toFixed(1),lb=bar.querySelector('b');lb.textContent=lab;
+  const whiteAhead=ev>=0,atBottom=flip?!whiteAhead:whiteAhead;lb.style.top=atBottom?'auto':'4px';lb.style.bottom=atBottom?'4px':'auto';lb.style.color=(whiteAhead!==flip)?'#1c1c1c':'#f2f2ee';
+  const now=$('#rvNow');
+  if(!m){now.className='now';now.innerHTML='<div class="mv">Start</div><p class="mute">Use the arrows, tap a move, or jump to the next mistake.</p>'}
+  else{
+    const lbl=CLS.find(x=>x[0]===m.cls),mine=m.c===a.my,ins=RV.ins[i-1];
+    const evTxt=Math.abs(ev)>=9000?'mate':`${ev>0?'+':''}${(ev/100).toFixed(1)}`;
+    now.className='now '+m.cls;
+    now.innerHTML=`<div style="display:flex;gap:10px;align-items:center"><span class="sym s-${m.cls}">${lbl[2]}</span><span class="mv">${Math.ceil(i/2)}${m.c==='w'?'.':'…'} ${esc(m.san)}</span><span class="small mute">${lbl[1]} · ${mine?'you':esc(RV.g.opp)} · eval ${evTxt}</span></div>`+
+      (ins?`<p style="margin-top:8px">${ins.text}</p>${isErr(m)?`<button class="sm" id="practice">Practise this position</button>`:''}`:(m.cls==='best'?'<p style="margin-top:8px">The engine\'s top choice.</p>':'<p style="margin-top:8px" class="mute">Fine move.</p>'));
+    const pr=$('#practice');if(pr)pr.onclick=()=>{PZ.mode='own';PZ.cur=null;PZ.pick={url:S.rev.url,i:i-1};setTab('puzzles')};
+  }
+  document.querySelectorAll('#rvList .mvb').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+  document.querySelectorAll('#rvKeys .key').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
+  const on=document.querySelector('#rvList .mvb.on'),list=$('#rvList');
+  if(on&&list){const t=on.offsetTop-list.clientHeight/2;list.scrollTop=Math.max(0,t)}
+  graphSVG($('#rvGraph'),a,i,j=>{S.rev.i=j;rvUpdate()});
 }
+
+/* ---------- puzzles ---------- */
+const PZ={mode:'themed',theme:null,cur:null,cg:null,pick:null,stats:store.get('cc_pzstats',{}),streak:0,ownIdx:0};
+function dests(c){const d=new Map();c.moves({verbose:true}).forEach(m=>{if(!d.has(m.from))d.set(m.from,[]);d.get(m.from).push(m.to)});return d}
+function difficulty(){const r=S.games.find(g=>g.tc===mainTc())?.rating||1200;return r<900?'easiest':r<1300?'easier':r<1800?'normal':r<2200?'harder':'hardest'}
 function renderPuzzles(){
-  const el=$('#puzzles');S.pz.list=buildPuzzles();
-  const L=S.pz.list;
-  if(!S.pz.started&&L.length){S.pz.started=true;const f=L.findIndex(x=>!S.pz.done[x.id]);S.pz.i=f<0?0:f}
-  if(!L.length){el.innerHTML='<div class="empty" style="margin-top:24px">Puzzles come from your own mistakes. Analyse a few games first.</div>';return}
-  const i=S.pz.i%L.length,p=L[i],flip=p.fen.split(' ')[1]==='b';
-  const solved=Object.keys(S.pz.done).filter(k=>L.some(x=>x.id===k)).length;
-  el.innerHTML=`<h2>Puzzle ${i+1} of ${L.length}</h2><p class="mute">${solved} solved. These positions come from your games: find the move you missed.</p>
-  <div class="review"><div>${boardHTML(p.fen,{flip,sel:S.pz.sel,click:true,best:S.pz.show?[p.best.slice(0,2),p.best.slice(2,4)]:[]})}
-  <div class="navbtns"><button class="ghost" id="pzShow">Show solution</button><button id="pzNext">Next puzzle</button></div></div>
-  <div><p><b>${flip?'Black':'White'} to move.</b> In the game vs ${esc(p.opp)} you played <b>${esc(p.played)}</b> (${p.phase}) and lost ${p.loss}% win chance.</p>
-  <p>Tap a piece, then tap where it should go.</p><p id="pzMsg">${S.pz.msg}</p></div></div>`;
-  el.querySelectorAll('.sq').forEach(b=>b.onclick=()=>{
-    const sq=b.dataset.sq,c=new Chess(p.fen);
-    if(!S.pz.sel){const pc=c.get(sq);if(pc&&pc.color===c.turn()){S.pz.sel=sq;S.pz.msg='';renderPuzzles()}return}
-    const from=S.pz.sel;S.pz.sel=null;
-    const pc=c.get(sq);if(pc&&pc.color===c.turn()&&sq!==from){S.pz.sel=sq;renderPuzzles();return}
-    const mv=c.move({from,to:sq,promotion:'q'});
-    if(!mv){S.pz.msg='That move is not legal.';renderPuzzles();return}
-    const u=from+sq+(mv.promotion||'');
-    if(u===p.best||u.slice(0,4)===p.best.slice(0,4)&&p.best.length===4){S.pz.done[p.id]=1;store.set('cc_solved',S.pz.done);S.pz.msg=`<span class="W">Correct: ${esc(mv.san)}.</span> Press Next puzzle.`}
-    else S.pz.msg=`<span class="L">${esc(mv.san)} is not the engine's move.</span> Try again or show the solution.`;
-    renderPuzzles();
-  });
-  $('#pzShow').onclick=()=>{S.pz.show=true;S.pz.msg=`Solution: <b>${esc(uciToSan(p.fen,p.best))}</b>`;renderPuzzles()};
-  $('#pzNext').onclick=()=>{S.pz.i=i+1;S.pz.sel=null;S.pz.show=false;S.pz.msg='';renderPuzzles()};
+  const el=$('#puzzles'),wk=weakness(),own=myErrors();
+  if(!PZ.theme)PZ.theme=wk[0]?.[0]||'hangingPiece';
+  const themeList=[...new Set([...wk.map(x=>x[0]),'hangingPiece','fork','mate','endgame'])];
+  const st=PZ.stats[PZ.theme]||{ok:0,fail:0};
+  el.innerHTML=`
+  <h2>Train your weaknesses</h2>
+  ${wk.length?`<div class="card" style="margin-bottom:16px"><h3>Your mistake types</h3>${hbars(wk,wk[0][1],false)}<p class="small mute" style="margin:4px 0 0">From ${own.length} mistakes and blunders in your analysed games.</p></div>`:'<p class="mute">Analyse a few games and the puzzles get matched to your own mistakes. Until then you get general tactics.</p>'}
+  <div class="seg" role="group" aria-label="Puzzle source"><button data-mode="themed" aria-pressed="${PZ.mode==='themed'}">Matched puzzles</button><button data-mode="own" aria-pressed="${PZ.mode==='own'}">From your games (${own.length})</button></div>
+  <div class="chips" ${PZ.mode==='own'?'hidden':''}>${themeList.map(t=>`<button class="chip" data-theme="${t}" aria-pressed="${t===PZ.theme}">${esc(THEMES[t]||t)}${wk.find(x=>x[0]===t)?`<span class="c">${wk.find(x=>x[0]===t)[1]}</span>`:''}</button>`).join('')}</div>
+  <div class="rv" style="margin-top:12px">
+    <div><div class="cgb" id="pzBoard"></div>
+      <div class="navbtns"><button class="ghost" id="pzHint">Hint</button><button class="ghost" id="pzSol">Solution</button><button id="pzNext">Next puzzle</button></div></div>
+    <div>
+      <div class="pzmsg" id="pzMsg">Loading…</div>
+      <div id="pzInfo"></div>
+      <div class="card" style="margin-top:14px"><h3>${PZ.mode==='own'?'Your positions':esc(THEMES[PZ.theme]||PZ.theme)}</h3>
+        <p class="small" id="pzStats">${PZ.mode==='own'?'':`Solved ${st.ok} · missed ${st.fail} · `}streak ${PZ.streak}</p></div>
+    </div>
+  </div>`;
+  PZ.cg=Chessground($('#pzBoard'),{coordinates:true,animation:{enabled:true,duration:180},drawable:{enabled:true,visible:true},movable:{free:false,showDests:true,events:{after:pzMove}},premovable:{enabled:false}});
+  el.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{PZ.mode=b.dataset.mode;PZ.cur=null;renderPuzzles()});
+  el.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{PZ.theme=b.dataset.theme;PZ.cur=null;renderPuzzles()});
+  $('#pzNext').onclick=()=>{PZ.cur=null;loadPuzzle()};
+  $('#pzHint').onclick=()=>{const p=PZ.cur;if(!p||p.done)return;p.hinted=true;PZ.cg.setAutoShapes([{orig:p.sol[p.k].slice(0,2),brush:'green'}])};
+  $('#pzSol').onclick=()=>{const p=PZ.cur;if(!p||p.done)return;p.failed=true;p.done=true;const u=p.sol[p.k];pzSet();PZ.cg.setAutoShapes([{orig:u.slice(0,2),dest:u.slice(2,4),brush:'green'}]);pzFinish(false,`Solution: <b>${esc(uciToSan(p.fen,u))}</b>${p.sol.length-p.k>1?' (and the line continues)':''}.`)};
+  if(PZ.cur){pzSet();pzMsg(PZ.cur.done?'Done. Press Next puzzle.':`${PZ.cur.orient==='white'?'White':'Black'} to move.`);$('#pzInfo').innerHTML=PZ.cur.info}else loadPuzzle();
 }
+function pzMsg(h){const e=$('#pzMsg');if(e)e.innerHTML=h}
+async function loadPuzzle(){
+  PZ.cg.setAutoShapes([]);
+  if(PZ.mode==='own'){
+    const own=myErrors();if(!own.length){pzMsg('<span class="mute">No positions yet: analyse some games first.</span>');$('#pzInfo').innerHTML='';PZ.cg.set({fen:'8/8/8/8/8/8/8/8 w - - 0 1',movable:{color:undefined}});return}
+    let x;if(PZ.pick){x=own.find(o=>o.url===PZ.pick.url&&o.i===PZ.pick.i);PZ.pick=null}
+    if(!x){x=own[PZ.ownIdx%own.length];PZ.ownIdx++}
+    const c=new Chess(x.fen),prev=x.i>0?S.an[x.url].moves[x.i-1]:null;
+    PZ.cur={fen:x.fen,sol:[x.best],k:0,orient:c.turn()==='w'?'white':'black',last:prev?[prev.u.slice(0,2),prev.u.slice(2,4)]:undefined,theme:x.theme,own:true,
+      info:`<p>From your game vs <b>${esc(x.opp)}</b>. You played <b>${esc(x.m.san)}</b> here (−${x.m.loss}%).</p><p class="small mute">Type: ${esc(THEMES[x.theme]||x.theme)}. Find the move you missed.</p>`,after:x.text};
+  }else{
+    pzMsg('<span class="mute">Loading puzzle…</span>');
+    try{
+      const r=await fetch(`https://lichess.org/api/puzzle/next?angle=${encodeURIComponent(PZ.theme)}&difficulty=${difficulty()}`,{headers:{Accept:'application/json'}});
+      if(!r.ok)throw 0;const j=await r.json(),p=j.puzzle;const c=new Chess(p.fen);
+      PZ.cur={fen:p.fen,sol:p.solution,k:0,orient:c.turn()==='w'?'white':'black',last:p.lastMove?[p.lastMove.slice(0,2),p.lastMove.slice(2,4)]:undefined,theme:PZ.theme,
+        info:`<p class="small mute">Puzzle ${esc(p.id)} · rating ${p.rating} · ${p.solution.length>1?Math.ceil(p.solution.length/2)+' moves':'1 move'}</p><p class="small"><a href="https://lichess.org/training/${esc(p.id)}" target="_blank" rel="noopener">Open on lichess</a></p>`};
+    }catch(e){pzMsg('<span class="bad">Could not load a puzzle from lichess.</span> <span class="small mute">Try again or use "From your games".</span>');return}
+  }
+  pzSet();pzMsg(`${PZ.cur.orient==='white'?'White':'Black'} to move. Find the best move.`);$('#pzInfo').innerHTML=PZ.cur.info;
+}
+function pzSet(){
+  const p=PZ.cur;if(!p)return;const c=new Chess(p.fen),turn=c.turn()==='w'?'white':'black';
+  PZ.cg.set({fen:p.fen,orientation:p.orient,turnColor:turn,lastMove:p.last,check:c.in_check(),movable:{color:p.done?undefined:p.orient,dests:p.done?new Map():dests(c)}});
+}
+function pzMove(from,to){
+  const p=PZ.cur;if(!p||p.done)return;
+  const pl=play(p.fen,from+to);if(!pl){pzSet();return}
+  const u=from+to+(pl.mv.promotion||''),want=p.sol[p.k];
+  const ok=u===want||u.slice(0,4)===want.slice(0,4)||(pl.c.in_checkmate()&&p.k===p.sol.length-1);
+  if(!ok){p.failed=true;pzMsg(`<span class="bad">${esc(pl.mv.san)} is not it.</span> Try again.`);setTimeout(pzSet,350);return}
+  p.fen=pl.c.fen();p.last=[from,to];p.k++;PZ.cg.setAutoShapes([]);
+  if(p.k>=p.sol.length){p.done=true;pzSet();pzFinish(true);return}
+  pzSet();pzMsg('<span class="ok">Good!</span> Keep going…');
+  setTimeout(()=>{const r=p.sol[p.k],q=play(p.fen,r);if(!q)return;p.fen=q.c.fen();p.last=[r.slice(0,2),r.slice(2,4)];p.k++;pzSet();pzMsg('<span class="ok">Correct.</span> Now the next move.')},500);
+}
+function pzFinish(won,extra){
+  const p=PZ.cur;const clean=won&&!p.failed&&!p.hinted;
+  if(!p.own){const s=PZ.stats[p.theme]||{ok:0,fail:0};clean?s.ok++:s.fail++;PZ.stats[p.theme]=s;store.set('cc_pzstats',PZ.stats)}
+  PZ.streak=clean?PZ.streak+1:0;
+  pzMsg(won?(clean?'<span class="ok">Solved!</span>':'<span class="ok">Solved</span> <span class="small mute">(with help)</span>'):(extra||''));
+  if(p.after){p.info+=`<p>${p.after}</p>`;$('#pzInfo').innerHTML=p.info}
+  const s=$('#pzStats');if(s){const st=PZ.stats[PZ.theme]||{ok:0,fail:0};s.textContent=(PZ.mode==='own'?'':`Solved ${st.ok} · missed ${st.fail} · `)+`streak ${PZ.streak}`}
+}
+
+/* ---------- openings ---------- */
 function openingStats(){
-  const map={};
-  for(const g of S.games){const k=g.color+'|'+g.opening;(map[k]=map[k]||{name:g.opening,color:g.color,list:[]}).list.push(g)}
+  const map={};for(const g of S.games){const k=g.color+'|'+g.opening;(map[k]=map[k]||{name:g.opening,color:g.color,list:[]}).list.push(g)}
   return Object.values(map).map(o=>({...o,...score(o.list)})).sort((a,b)=>b.n-a.n);
 }
 function renderOpenings(){
   const el=$('#openings');
-  if(!S.games.length){el.innerHTML='<div class="empty" style="margin-top:24px">No games loaded yet.</div>';return}
+  if(!S.games.length){el.innerHTML='<div class="empty">No games loaded yet.</div>';return}
   const st=openingStats();
   const table=c=>{const rows=st.filter(o=>o.color===c);return rows.length?`<div class="scroll"><table class="stack"><thead><tr><th>Opening</th><th class="n">Games</th><th class="n">W–D–L</th><th class="n">Score</th></tr></thead><tbody>${rows.map(o=>`<tr><td>${esc(o.name)}</td><td class="n">${o.n}</td><td class="n">${o.w}–${o.d}–${o.l}</td><td class="n ${o.n>=3&&o.s<45?'L':''}">${o.s}%</td></tr>`).join('')}</tbody></table></div>`:'<p class="mute">No games.</p>'};
   const seen=new Set(),cards=[];
@@ -437,21 +582,21 @@ function renderOpenings(){
   el.innerHTML=`<h2>Your openings</h2><div class="grid"><div><h3>As White</h3>${table('white')}</div><div><h3>As Black</h3>${table('black')}</div></div>
   <h2>Theory for what you actually play</h2>${cards.join('')||'<p class="mute">No theory notes for these openings yet.</p>'}`;
 }
+
+/* ---------- wiring ---------- */
 const R={overview:renderOverview,games:renderGames,review:renderReview,puzzles:renderPuzzles,openings:renderOpenings};
 function renderAll(){R[S.tab]()}
 function setTab(t){S.tab=t;document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));for(const k in R)$('#'+k).hidden=k!==t;R[t]()}
-
-/* ---------- wiring ---------- */
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 $('#syncForm').onsubmit=e=>{e.preventDefault();sync(false)};
 $('#stopBtn').onclick=()=>{stopFlag=true};
-document.addEventListener('keydown',e=>{if(S.tab!=='review'||e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(e.key==='ArrowRight'){S.rev.i++;renderReview()}if(e.key==='ArrowLeft'){S.rev.i--;renderReview()}});
+document.addEventListener('keydown',e=>{if(S.tab!=='review'||/INPUT|SELECT/.test(e.target.tagName))return;if(e.key==='ArrowRight'){S.rev.i++;rvUpdate()}if(e.key==='ArrowLeft'){S.rev.i--;rvUpdate()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S.user&&Date.now()-store.get('cc_last',0)>5*60e3)sync(true)});
 setInterval(()=>{if(S.user&&document.visibilityState==='visible')sync(true)},10*60e3);
+window.addEventListener('resize',()=>{RV.cg?.redrawAll();PZ.cg?.redrawAll()});
 const saved=store.get('cc_user','');
-if(saved){$('#user').value=saved;S.user=saved;S.games=store.get('cc_g_'+saved,[]);S.an=store.get('cc_an_'+saved,{});sync(true)}
+if(saved){$('#user').value=saved;S.user=saved;S.games=store.get('cc_g_'+saved,[]);S.an=store.get(AN+saved,{});sync(true)}
 setTab('overview');
-}
 </script>
 </body>
 </html>
