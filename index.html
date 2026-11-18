@@ -138,7 +138,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const DRAWS=['agreed','repetition','stalemate','insufficient','50move','timevsinsufficient'];
-const AN='cc_an2_';
+const AN='cc_an3_';
 
 /* ---------- opening theory ---------- */
 const THEORY=[
@@ -224,10 +224,10 @@ function engine(){
 }
 function rawEval(fen,depth){
   return new Promise(res=>{
-    let cp=0,mate=null;
+    let cp=0,mate=null,pv=[];
     eng.onmessage=e=>{const l=String(e.data);
-      if(l.startsWith('info')&&l.includes(' score ')){const m=l.match(/score (cp|mate) (-?\d+)/);if(m){if(m[1]==='cp'){cp=+m[2];mate=null}else mate=+m[2]}}
-      else if(l.startsWith('bestmove')){const b=l.split(' ')[1];res({cp:mate===null?cp:(mate>0?10000-mate:-10000-mate),best:b&&b!=='(none)'?b:null})}};
+      if(l.startsWith('info')&&l.includes(' score ')){const m=l.match(/score (cp|mate) (-?\d+)/);if(m){if(m[1]==='cp'){cp=+m[2];mate=null}else mate=+m[2]}if(l.includes(' pv '))pv=l.split(' pv ')[1].trim().split(' ').slice(0,10)}
+      else if(l.startsWith('bestmove')){const b=l.split(' ')[1];res({cp:mate===null?cp:(mate>0?10000-mate:-10000-mate),best:b&&b!=='(none)'?b:null,pv})}};
     eng.postMessage('position fen '+fen);eng.postMessage('go depth '+depth);
   });
 }
@@ -247,19 +247,19 @@ async function analyze(url,onProg){
   const fenH=(g.pgn.match(/\[FEN "([^"]+)"\]/)||[])[1];
   const c=fenH?new Chess(fenH):new Chess(),fens=[c.fen()],moves=[];
   for(const san of movesFromPgn(g.pgn)){const m=c.move(san);if(!m)break;moves.push({san:m.san,u:m.from+m.to+(m.promotion||''),c:m.color});fens.push(c.fen())}
-  const depth=+$('#depth').value,evals=[],best=[],t=new Chess();
+  const depth=+$('#depth').value,evals=[],best=[],pvs=[],t=new Chess();
   for(let i=0;i<fens.length;i++){
     if(stopFlag)return null;
-    t.load(fens[i]);let cp,b=null;
-    if(t.in_checkmate())cp=-10000;else if(t.in_draw()||t.in_stalemate())cp=0;else{const r=await evalFen(fens[i],depth);cp=r.cp;b=r.best}
-    evals.push(t.turn()==='w'?cp:-cp);best.push(b);onProg&&onProg(i+1,fens.length);
+    t.load(fens[i]);let cp,b=null,pv=[];
+    if(t.in_checkmate())cp=-10000;else if(t.in_draw()||t.in_stalemate())cp=0;else{const r=await evalFen(fens[i],depth);cp=r.cp;b=r.best;pv=r.pv&&r.pv[0]===b?r.pv:(b?[b]:[])}
+    evals.push(t.turn()==='w'?cp:-cp);best.push(b);pvs.push(pv);onProg&&onProg(i+1,fens.length);
   }
   moves.forEach((m,i)=>{
     const sg=m.c==='w'?1:-1,loss=Math.max(0,winp(sg*evals[i])-winp(sg*evals[i+1]));
     m.loss=Math.round(loss*10)/10;m.cls=classify(loss,best[i]&&m.u===best[i]);
     m.phase=i+1<=20?'opening':material(fens[i])<=26?'endgame':'middlegame';
   });
-  S.an[url]={fens,evals,best,moves,my:g.color[0]};
+  S.an[url]={fens,evals,best,pv:pvs,moves,my:g.color[0]};
   const keep=Object.keys(S.an).slice(-60),slim={};keep.forEach(k=>slim[k]=S.an[k]);S.an=slim;store.set(AN+S.user,S.an);
 }
 function enqueue(url){if(!queue.includes(url)&&!S.an[url])queue.push(url);runQueue()}
@@ -295,32 +295,61 @@ function forkTargets(fen,u){
   const p=play(fen,u);if(!p)return[];const pm=pmap(p.c.fen()),me=p.mv.color==='w',v=VAL[p.mv.piece];
   return attacks(pm,p.mv.to).filter(s=>{const x=pm[s];if(!x||isW(x)===me)return false;const t=x.toLowerCase();return t==='k'||(VAL[t]>=3&&(VAL[t]>v||!defended(pm,s,!me)))});
 }
-/* what went wrong on move i, in plain words, plus a training theme */
+/* why a move was bad, in plain words, plus a training theme */
+const PV=(a,i)=>(a.pv&&a.pv[i]&&a.pv[i].length?a.pv[i]:(a.best[i]?[a.best[i]]:[]));
+function runLine(fen,line,max){const c=new Chess(fen),sans=[],fs=[fen];for(const u of line.slice(0,max||10)){const mv=c.move({from:u.slice(0,2),to:u.slice(2,4),promotion:u[4]||'q'});if(!mv)break;sans.push(mv.san);fs.push(c.fen())}return{sans,end:fs[fs.length-1]}}
+function counts(fen){const n={};for(const ch of fen.split(' ')[0])if(/[a-z]/i.test(ch))n[ch]=(n[ch]||0)+1;return n}
+function lostPieces(f0,f1,col){const a=counts(f0),b=counts(f1),out=[];for(const t of 'qrbnp'){const k=col==='w'?t.toUpperCase():t,d=(a[k]||0)-(b[k]||0);for(let j=0;j<d;j++)out.push(t)}return out}
+const nameList=l=>{const c={};l.forEach(t=>c[t]=(c[t]||0)+1);return Object.entries(c).map(([t,n])=>n>1?`${n} ${PN[t]}s`:(t==='q'?'the queen':`a ${PN[t]}`)).join(' and ')};
+const worth=l=>l.reduce((s,t)=>s+VAL[t],0);
+const lineTxt=s=>`<b>${esc(s.slice(0,6).join(' '))}</b>`;
 function insight(a,i){
-  const m=a.moves[i],sg=m.c==='w'?1:-1,before=sg*a.evals[i],after=sg*a.evals[i+1],best=a.best[i],reply=a.best[i+1];
-  const bestSan=uciToSan(a.fens[i],best),replySan=uciToSan(a.fens[i+1],reply);
-  const tail=best&&best!==m.u?` Better was <b>${esc(bestSan)}</b>.`:'';
-  if(before>=9000&&after<9000)return{theme:'mate',text:`You had a forced mate starting with <b>${esc(bestSan)}</b>.`};
-  if(after<=-9000&&before>-9000)return{theme:'defensiveMove',text:`This walks into a forced mate: <b>${esc(replySan)}</b>.${tail}`};
-  if(best&&best!==m.u){
-    const ft=forkTargets(a.fens[i],best);
-    if(ft.length>=2){const pm=pmap(play(a.fens[i],best).c.fen());return{theme:'fork',text:`You missed a fork: <b>${esc(bestSan)}</b> hits the ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')}.`}}
-    const p=play(a.fens[i],best);
-    if(p&&p.mv.captured&&VAL[p.mv.captured]>=3){
-      const free=!defended(pmap(a.fens[i]),p.mv.to,m.c!=='w');
-      if(free||VAL[p.mv.captured]>VAL[p.mv.piece])return{theme:'hangingPiece',text:`<b>${esc(bestSan)}</b> wins the ${PN[p.mv.captured]} on ${p.mv.to}${free?' for free':''}.`};
-    }
+  const m=a.moves[i],me=m.c,op=me==='w'?'b':'w',sg=me==='w'?1:-1,before=sg*a.evals[i],after=sg*a.evals[i+1];
+  const best=a.best[i],f0=a.fens[i],f1=a.fens[i+1],bestSan=uciToSan(f0,best);
+  const bestL=runLine(f0,PV(a,i)),playL=runLine(f0,[m.u,...PV(a,i+1)]);
+  const replySans=playL.sans.slice(1),reply=PV(a,i+1)[0],replySan=replySans[0]||'';
+  const better=best&&best!==m.u?` Better was <b>${esc(bestSan)}</b>.`:'';
+  const pm0=pmap(f0),pm1=pmap(f1);
+  if(before>=9000&&after<9000)return{theme:'mate',text:`You had a forced mate: ${lineTxt(bestL.sans)}.`};
+  if(after<=-9000&&before>-9000)return{theme:'defensiveMove',text:`This walks into a forced mate: ${lineTxt(replySans)}.${better}`};
+  const myLostP=lostPieces(f0,playL.end,me),opLostP=lostPieces(f0,playL.end,op),dPlay=worth(opLostP)-worth(myLostP);
+  const myLostB=lostPieces(f0,bestL.end,me),opLostB=lostPieces(f0,bestL.end,op),dBest=worth(opLostB)-worth(myLostB);
+  if(best&&best!==m.u){const ft=forkTargets(f0,best);if(ft.length>=2&&dBest>dPlay){const pm=pmap(play(f0,best).c.fen());return{theme:'fork',text:`You missed a fork: <b>${esc(bestSan)}</b> attacks the ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')} at once.`}}}
+  if(reply){const ft=forkTargets(f1,reply);if(ft.length>=2&&dPlay<0){const pm=pmap(play(f1,reply).c.fen());return{theme:'fork',text:`This allows a fork: <b>${esc(replySan)}</b> attacks your ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')} at once.${better}`}}}
+  if(replySans.some((s,k)=>k%2===0&&s.includes('=')))return{theme:'promotion',text:`This lets your opponent's pawn promote: ${lineTxt(replySans)}.${better}`};
+  if(dPlay<=-1&&dBest-dPlay>=1){
+    const back=opLostP.length?` You only get ${nameList(opLostP)} back.`:'';
+    const cap=reply?play(f1,reply):null,sq=cap&&cap.mv.captured?cap.mv.to:null,pn=sq?PN[(pm1[sq]||'p').toLowerCase()]:'';
+    const why=!sq?'it allows a combination':sq===m.u.slice(2,4)?`your ${pn} on ${sq} is not protected enough there`:defended(pm0,sq,op==='w')?`you ignored the threat against your ${pn} on ${sq}`:`your move takes away the protection of your ${pn} on ${sq}`;
+    return{theme:'hangingPiece',text:`This loses ${nameList(myLostP)}: ${why}. ${lineTxt(replySans)}.${back}${better}`};
   }
-  if(reply){
-    const ft=forkTargets(a.fens[i+1],reply);
-    if(ft.length>=2){const pm=pmap(play(a.fens[i+1],reply).c.fen());return{theme:'fork',text:`This allows a fork: <b>${esc(replySan)}</b> hits your ${ft.map(s=>PN[pm[s].toLowerCase()]).join(' and ')}.${tail}`}}
-    const p=play(a.fens[i+1],reply);
-    if(p&&p.mv.captured&&VAL[p.mv.captured]>=3)return{theme:'hangingPiece',text:`This leaves your ${PN[p.mv.captured]} on ${p.mv.to} loose: <b>${esc(replySan)}</b> takes it.${tail}`};
+  if(dBest>=1&&dBest-dPlay>=1)return{theme:'advantage',text:`You missed winning ${nameList(opLostB)}: ${lineTxt(bestL.sans)}.`};
+  const pc=m.san.startsWith('O-O')?'k':/^[a-h]/.test(m.san)?'p':m.san[0].toLowerCase();
+  const bp=best?(play(f0,best)?.mv.piece||''):'';
+  const kSq=Object.keys(pm0).find(s=>pm0[s]===(me==='w'?'K':'k'));
+  const oppChecks=replySans.filter((s,k)=>k%2===0&&s.includes('+')).length,myChecks=bestL.sans.filter((s,k)=>k%2===0&&s.includes('+')).length;
+  if(pc==='p'&&kSq&&'abcfgh'.includes(kSq[0])&&(kSq[1]==='1'||kSq[1]==='8')&&Math.abs(m.u.charCodeAt(0)-kSq.charCodeAt(0))<=1)return{theme:'kingsideAttack',text:`Pawn moves in front of your own king create holes and open lines for your opponent: ${lineTxt(replySans)}.${better}`};
+  if(oppChecks>=2)return{theme:'kingsideAttack',text:`This leaves your king exposed: your opponent attacks it with checks: ${lineTxt(replySans)}.${better}`};
+  if(myChecks>=2)return{theme:'kingsideAttack',text:`You missed an attack on the king: ${lineTxt(bestL.sans)}.`};
+  if(bestSan.startsWith('O-O'))return{theme:'opening',text:`Castling was the move: your king gets safe and the rook joins the game. Delaying it gives your opponent time to attack.`};
+  const prev=i>0?a.moves[i-1]:null;
+  if(prev&&prev.san.includes('x')&&best&&best.slice(2,4)===prev.u.slice(2,4)&&m.u.slice(2,4)!==best.slice(2,4))return{theme:'middlegame',text:`You had to take back on ${best.slice(2,4)} first: <b>${esc(bestSan)}</b>. Without the recapture you stay behind in material.`};
+  if(m.phase==='opening'){
+    const twice=a.moves.slice(0,i).some(x=>x.c===me&&x.u.slice(2,4)===m.u.slice(0,2));
+    const pre=(pc==='q'?'Bringing the queen out early lets your opponent win time by attacking it. ':'')+(twice&&pc!=='q'?'You move the same piece twice while others are still at home. ':'');
+    if((bp==='n'||bp==='b')&&(best[1]==='1'||best[1]==='8'))return{theme:'opening',text:`${pre}Develop first: <b>${esc(bestSan)}</b> brings a new piece into the game.`};
+    if(bp==='p'&&'de'.includes(best[2]))return{theme:'opening',text:`${pre}Fight for the centre: <b>${esc(bestSan)}</b> gives your pieces more space.`};
+    if(pre)return{theme:'opening',text:`${pre.trim()}${better}`};
   }
-  const th=m.phase==='opening'?'opening':m.phase==='endgame'?'endgame':'middlegame';
-  return{theme:th,text:`Your move lost ${m.loss}% winning chance.${tail}`};
+  if(m.san.includes('x')&&best&&!bestSan.includes('x')&&Math.abs(dPlay)<1)return{theme:'middlegame',text:`This trade helps your opponent: their pieces get freer. <b>${esc(bestSan)}</b> keeps the tension.`};
+  if(pc==='n'&&'ah'.includes(m.u[2])&&!'ah'.includes(m.u[0]))return{theme:'middlegame',text:`A knight on the edge controls only a few squares.${better}`};
+  if(m.phase==='endgame'&&bp==='k'&&pc!=='k')return{theme:'endgame',text:`Activate your king: in the endgame it is a strong piece. <b>${esc(bestSan)}</b> brings it into play.`};
+  if(m.phase==='endgame'&&bp==='p')return{theme:'endgame',text:`Push your pawns: in endgames the pawn race decides. <b>${esc(bestSan)}</b> was the plan.`};
+  if(best&&bp&&bp!=='p'&&bp!=='k'){const pb=play(f0,best),gain=attacks(pmap(pb.c.fen()),best.slice(2,4)).length-attacks(pm0,best.slice(0,2)).length;if(gain>=3)return{theme:'middlegame',text:`Your ${PN[bp]} on ${best.slice(0,2)} is passive. <b>${esc(bestSan)}</b> puts it on a much more active square.`}}
+  if(reply&&reply.slice(2,4)===m.u.slice(2,4))return{theme:m.phase==='opening'?'opening':m.phase==='endgame'?'endgame':'middlegame',text:`Your piece on ${m.u.slice(2,4)} gets chased away by <b>${esc(replySan)}</b> and you lose time.${better}`};
+  return{theme:m.phase==='opening'?'opening':m.phase==='endgame'?'endgame':'middlegame',text:`This gives your opponent the initiative: ${lineTxt(replySans)} improves their position. <b>${esc(bestSan)}</b> was stronger: ${lineTxt(bestL.sans)}.`};
 }
-const THEMES={mate:'Missed mates',defensiveMove:'Walking into mate',fork:'Forks',hangingPiece:'Loose pieces',opening:'Opening',middlegame:'Middlegame',endgame:'Endgame'};
+const THEMES={mate:'Missed mates',defensiveMove:'Walking into mate',fork:'Forks',hangingPiece:'Losing material',advantage:'Missed wins',kingsideAttack:'King safety',promotion:'Promotion',opening:'Opening',middlegame:'Middlegame',endgame:'Endgame'};
 const CLS=[['best','Best','★'],['excellent','Excellent','!'],['good','Good','✓'],['inaccuracy','Inaccuracy','?!'],['mistake','Mistake','?'],['blunder','Blunder','??']];
 const SYM=Object.fromEntries(CLS.map(c=>[c[0],c[2]]));
 const isErr=m=>m.cls==='mistake'||m.cls==='blunder';
@@ -359,7 +388,7 @@ function myMoves(){const out=[];for(const g of S.games){const a=S.an[g.url];if(!
 function mainTc(){const c={};S.games.forEach(g=>c[g.tc]=(c[g.tc]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1])[0]?.[0]}
 function tips(){
   const T=[],G=S.games,an=G.filter(g=>S.an[g.url]),mm=myMoves(),wk=weakness();
-  if(wk.length){const [k,v]=wk[0],adv={mate:'Look for checks first in every sharp position. Do mate puzzles daily.',defensiveMove:'Before each move ask: what does my opponent threaten against my king?',fork:'Check every knight and queen move for double attacks, yours and theirs.',hangingPiece:'Before you move, count attackers and defenders of every piece. Blunder check: what is undefended?',opening:'Learn the ideas of your main openings (Openings tab) instead of moves by heart.',middlegame:'Slow down in the middlegame: make a plan, check loose pieces, avoid rushed captures.',endgame:'Practise basic endgames: king activity, king + pawn vs king, rook endgames.'};
+  if(wk.length){const [k,v]=wk[0],adv={mate:'Look for checks first in every sharp position. Do mate puzzles daily.',defensiveMove:'Before each move ask: what does my opponent threaten against my king?',fork:'Check every knight and queen move for double attacks, yours and theirs.',hangingPiece:'Before you move, count attackers and defenders of every piece. Blunder check: what is undefended?',opening:'Learn the ideas of your main openings (Openings tab) instead of moves by heart.',middlegame:'Slow down in the middlegame: make a plan, check loose pieces, avoid rushed captures.',endgame:'Practise basic endgames: king activity, king + pawn vs king, rook endgames.',advantage:'Look for captures, checks and double attacks for YOU every move: you leave material on the board.',kingsideAttack:'Keep the pawns in front of your king and count attackers near it before every move.',promotion:'Stop passed pawns early: put a piece in front of them.'};
     T.push([`Biggest weakness: ${THEMES[k]}`,`${v} of your mistakes are of this type. ${adv[k]} The Puzzles tab trains it.`])}
   if(an.length){const bl=mm.filter(m=>m.cls==='blunder').length/an.length;if(bl>=0.8)T.push(['Blunder check',`About ${bl.toFixed(1)} blunders per game. Before every move: checks, captures, threats.`])}
   const losses=G.filter(g=>g.res==='L'),tout=losses.filter(g=>g.how==='timeout').length;
@@ -478,7 +507,9 @@ function rvUpdate(){
     const evTxt=Math.abs(ev)>=9000?'mate':`${ev>0?'+':''}${(ev/100).toFixed(1)}`;
     now.className='now '+m.cls;
     now.innerHTML=`<div style="display:flex;gap:10px;align-items:center"><span class="sym s-${m.cls}">${lbl[2]}</span><span class="mv">${Math.ceil(i/2)}${m.c==='w'?'.':'…'} ${esc(m.san)}</span><span class="small mute">${lbl[1]} · ${mine?'you':esc(RV.g.opp)} · eval ${evTxt}</span></div>`+
-      (ins?`<p style="margin-top:8px">${ins.text}</p>${isErr(m)?`<button class="sm" id="practice">Practise this position</button>`:''}`:(m.cls==='best'?'<p style="margin-top:8px">The engine\'s top choice.</p>':'<p style="margin-top:8px" class="mute">Fine move.</p>'));
+      (ins?`<p style="margin-top:8px">${ins.text}</p>${isErr(m)?`<button class="sm" id="practice">Practise this position</button>`:''}`:
+       !mine&&['inaccuracy','mistake','blunder'].includes(m.cls)?`<p style="margin-top:8px">Your opponent made a ${m.cls}. The best answer: ${lineTxt(runLine(fen,PV(a,i)).sans)}.</p>`:
+       `<p style="margin-top:8px">${m.cls==='best'?'Best move. Exactly what the engine plays.':m.cls==='excellent'?'Excellent move.':'Good move.'}</p>`);
     const pr=$('#practice');if(pr)pr.onclick=()=>{PZ.mode='own';PZ.cur=null;PZ.pick={url:S.rev.url,i:i-1};setTab('puzzles')};
   }
   document.querySelectorAll('#rvList .mvb').forEach(b=>b.classList.toggle('on',+b.dataset.i===i));
